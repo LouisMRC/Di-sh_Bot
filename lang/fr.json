@@ -1,3 +1,17 @@
 {
-    "landing_message": "Ah ah!!\nPetit malin, tu m'as trouvé en regardans le code source...\nNon ?\nImpossible!!!\nJe t'invite à m'expliquer comment tu as fait sur mon GitHub: ```github.com/LouisMrc```"
+    "landing_message": "Ah ah!!\nPetit malin, tu m'as trouvé en regardans le code source...\nNon ?\nImpossible!!!\nJe t'invite à m'expliquer comment tu as fait sur mon GitHub: ```github.com/LouisMrc```",
+
+    "unexpected_configReset": "erreur de base de donnée :confused:",
+
+    "guild_rolecount": "Il y a $roleCount rôles sur ce serveur",
+
+    "member_rolecount": "$member a $roleCount rôles",
+
+    "undefined_member": "Non, **$member** n'existe pas(je ne peux pas compter ses rôles)",
+
+    "bot_general_settings": "Paramètres:\n-Préfix(prefix nouveauPréfix): **`$prefix`**\n-Langue(language nouvelleLangue): **`$language`**\n-noping auto(auto-noping): **`$AutoNOPING`**",
+
+    "error_no_prefix_specified": "Vous devez indiquer le nouveau préfix",
+
+    "error_no_language_specified": "Vous devez indiquer la nouvelle langue pour ce serveur"
 }

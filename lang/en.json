@@ -1,3 +1,19 @@
 {
-    "landing_message": ""
+    "landing_message": "Hello World!",
+
+    "unexpected_configReset": "unexpected reset",
+
+    "guild_rolecount": "There are $roleCount roles on this server",
+
+    "member_rolecount": "$member has $roleCount roles",
+
+    "undefined_member": "nope, **$member** is not a valid user(i can't count his roles)",
+
+    "bot_general_settings": "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**",
+
+    "error_no_prefix_specified": "You must specify the new prefix",
+
+    "error_no_language_specified": "You must specify the new language"
+
+
 }
