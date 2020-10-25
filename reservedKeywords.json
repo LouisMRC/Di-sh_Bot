@@ -1,0 +1,10 @@
+{
+    "reserved": [
+        "alias",
+        "emoji",
+        "member",
+        "role",
+        "roleGroup",
+        "settings"
+    ]
+}

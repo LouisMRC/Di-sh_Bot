@@ -13,7 +13,13 @@
 
     "error_no_prefix_specified": "You must specify the new prefix",
 
-    "error_no_language_specified": "You must specify the new language"
+    "error_no_language_specified": "You must specify the new language",
+
+    "settings_update": "The value of __$setting__ has been updated (new value: **`$value`**)",
+
+    "help_dialog": "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)",
+    
+    "help_message": ""
 
 
 }

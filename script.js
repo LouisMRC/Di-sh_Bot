@@ -1,10 +1,12 @@
+const fs = require('fs');
 const Mention = require("./modules/mention");
 const TextDecorations = require("./modules/textDecorations");
 const Discord = require("discord.js");
 const Mariadb = require("mariadb");
 const ServerConf = require("./modules/serverConfig");
 const Client = new Discord.Client();
-const LANGUAGES = new Map();
+Client.commands = new Discord.Collection();
+const languages = new Map();
 const{
     token,
     langPath,
@@ -14,6 +16,7 @@ const{
     dbUserPasswd
 } = require('./config.json');
 const mention = require("./modules/mention");
+const ServerConfig = require('./modules/serverConfig');
 
 const pool = Mariadb.createPool( {
     host: dbHost,
@@ -22,6 +25,12 @@ const pool = Mariadb.createPool( {
     database: dbName,
     connectionLimit: 5
 });
+
+for(const file of fs.readdirSync('./commands').filter(file => file.endsWith('.js'))) 
+{
+	const command = require(`./commands/${file}`);
+	Client.commands.set(command.name, command);
+}
 
 let servers = new Map();
 
@@ -33,11 +42,16 @@ pool.getConnection()
         Client.once("ready", () => console.log("Let's Go!!!"));
 
         Client.on("message", (message) => {
-            matchCommand(connection, message);
+            commandExe(connection, message.guild, message.content, message);
+            if(Mention.isUserMention(message.content) && Mention.getUserID(message.content) === Client.user.id)message.reply(languages.get(servers.get(message.guild.id).getLanguage()).help_dialog.replace("$prefix", servers.get(message.guild.id).getPrefix()).replace("$prefix", servers.get(message.guild.id).getPrefix()));
         });
 
         Client.on("messageUpdate", (oldMessage, newMessage) => {
-            if(((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)matchCommand(connection, newMessage);
+            if(((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
+            {
+                commandExe(connection, message.guild, message.content, message);
+                if(Mention.isUserMention(newMessage.content) && Mention.getUserID(newMessage.content) === Client.user.id)newMessage.reply(languages.get(servers.get(newMessage.guild.id).getLanguage()).help_dialog.replace("$prefix", servers.get(newMessage.guild.id).getPrefix()).replace("$prefix", servers.get(newMessage.guild.id).getPrefix()));
+            }
         })
 
         Client.on("guildCreate", guild => {
@@ -74,8 +88,8 @@ async function dbAddServer(connection, serverID)
 }
 function loadLanguages()
 {
-    LANGUAGES.set("en", require(langPath + "en.json"));
-    LANGUAGES.set("fr", require(langPath + "fr.json"));
+    languages.set("en", require(langPath + "en.json"));
+    languages.set("fr", require(langPath + "fr.json"));
 }
 
 
@@ -83,153 +97,112 @@ function loadLanguages()
 /**
  * 
  * @param connection 
+ * @param {Discord.Guild} guild 
+ * @param {Array} args 
+ * @param {ServerConfig} conf 
+ * @param locale 
+ * @param {Discord.Channel} channel 
+ * @param {Discord.User} author 
+ */
+async function matchCommand(connection, guild, args, conf, locale, channel, author)
+{
+    const ping = (args[args.length -1] === "noping" || servers.get(guild.id).isAutoNOPING()) ? false : true;
+    switch(args[0].toLowerCase())
+    {
+        case "ping":
+            message.channel.send("Pong!")
+                .then(() => message.channel.send(":wink:"));
+            break;
+        case "time":
+            message.channel.send(Date.now());
+            break;
+        case "role":
+            Client.commands.get("role").execute(args, guild, locale, channel, ping);//args, guild, locale, channel
+            break;
+        case "settings":
+            Client.commands.get("settings").execute(connection, args, guild, conf, locale, channel);//connection, args, guild, conf, locale, channel
+            break;
+        case "help":
+            break;
+    }
+}
+
+/**
+ * 
+ * @param connection 
+ * @param {Discord.Guild} guild 
+ * @param {string} command 
  * @param {Discord.Message} message 
  */
-async function matchCommand(connection, message)
+async function commandExe(connection, guild, command, message = null)
 {
-    if(!servers.has(message.guild.id))
+    if(!servers.has(guild.id))
     {
-        await connection.query("SELECT * FROM Servers WHERE ServerID=" + message.guild.id)
-            .then(async (rows) => { if(rows.length < 1)await dbAddServer(connection, message.guild.id); })
+        await connection.query("SELECT * FROM Servers WHERE ServerID=" + guild.id)
+            .then(async (rows) => { if(rows.length < 1)await dbAddServer(connection, guild.id); })
             .catch(err => console.error(err));
-        await loadServer(connection, message.guild.id);
+        await loadServer(connection, guild.id);
     }
 
-    if(message.content.startsWith(servers.get(message.guild.id).getPrefix()))
+
+    const guildPrefix = servers.get(guild.id).getPrefix();
+    let channel;
+    if(message === null)channel = guild.systemChannel;
+    else
     {
-        const currentLocale = LANGUAGES.get(servers.get(message.guild.id).getLanguage());
-        const args = message.content.slice(servers.get(message.guild.id).getPrefix().length).split(' ');
-        const ping = (args[args.length -1] === "noping" || servers.get(message.guild.id).isAutoNOPING()) ? false : true;
-        switch(args[0].toLowerCase())
+        if(!command.startsWith(guildPrefix))return;
+        channel = message.channel;
+    }
+    if(command.startsWith(guildPrefix))command = command.slice(guildPrefix.length);
+    const conf = servers.get(guild.id);
+    matchCommand(connection, guild, splitCommand(command), conf, languages.get(conf.getLanguage()), channel)
+
+}
+
+/**
+ * 
+ * @param {string} command 
+ */
+function splitCommand(command)
+{
+    let args = [];
+    let argBuffer = "";
+    for(let i = 0; i < command.length; i++)
+    {
+        let c = command[i]
+        switch(c)
         {
-            case "ping":
-                message.channel.send("Pong!")
-                    .then(() => message.channel.send(":wink:"));
-                break;
-            case "time":
-                message.channel.send(Date.now());
-                break;
-            case "count":
-                switch(args[1].toLowerCase())
+            case " ":
+                if(argBuffer.length > 0)
                 {
-
-                    case "emojis":
-                        break;
-                    case "members":
-                        break;
-                    break;
-                }
-            case "role":
-                switch(args[1].toLowerCase())
-                {
-                    case "add":
-                        break;
-                    case "role":
-                        break;
-                    case "replace":
-                        break;
-                    case "count":
-                        if(args.length < 3 || args[2].toLowerCase() === "all")
-                        {
-                            message.guild.roles.fetch()
-                                .then(roles => message.channel.send(currentLocale.guild_rolecount.replace("$roleCount", roles.cache.size)))
-
-                        }
-                        else if(Mention.isUserMention(args[2]))
-                        {
-                            message.guild.members.fetch(Mention.getUserID(args[2]))
-                                .then(member => message.channel.send(currentLocale.member_rolecount.replace("$member", ping ? mention.toUserMention(member.id) : TextDecorations.bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size)))
-                                .catch(console.error);
-                        }
-                        else
-                        {
-                            message.guild.members.fetch()
-                                .then(members => {
-                                    const member = members.find(mem => mem.user.username === args[2] || mem.nickname === args[2]);
-                                    if(member === undefined)message.channel.send(currentLocale.undefined_member.replace("$member", args[2]));
-                                    else message.channel.send(currentLocale.member_rolecount.replace("$member", ping ? mention.toUserMention(member.id) : TextDecorations.bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size));
-                                })
-                                .catch(console.error);
-                        }
-                        break;
-                    case "show":
-                        break;
+                    args.push(argBuffer);
+                    argBuffer = "";
                 }
                 break;
-
-            case "settings":
-                switch(args[1].toLowerCase())
+            case '"':
+            case "'":
+            case "[":
+                if(argBuffer.length > 0)
                 {
-                    case "show":
-                        const config = servers.get(message.guild.id);
-                        message.channel.send(currentLocale.bot_general_settings.replace("$prefix", config.getPrefix()).replace("$language", config.getLanguage()).replace("$AutoNOPING", (servers.get(message.guild.id).isAutoNOPING() ? "ON" : "OFF")));
-                        break;
-                    case "edit":
-                        switch(args[2].toLowerCase())
-                        {
-                            case "prefix":
-                                if(args.length < 4)
-                                {
-                                    message.channel.send(currentLocale.error_no_prefix_specified);
-                                    break;
-                                }
-                                connection.query("UPDATE Servers SET CommandPrefix='" + args[3] + "' WHERE ServerID=" + message.guild.id)
-                                servers.get(message.guild.id).setPrefix(args[3]);
-                                break;
-                            case "language":
-                                if(args.length < 4)
-                                {
-                                    message.channel.send(currentLocale.error_no_language_specified);
-                                    break;
-                                }
-                                setLang(connection, message, args[3]);
-                                break;
-                            case "auto-noping":
-                                connection.query("UPDATE Servers SET AutoNOPING=" + !servers.get(message.guild.id).isAutoNOPING() + " WHERE ServerID=" + message.guild.id)
-                                servers.get(message.guild.id).setAutoNOPING(!servers.get(message.guild.id).isAutoNOPING());
-                                break;
-                        }
-                        break
+                    args.push(argBuffer);
+                    argBuffer = "";
                 }
+                do
+                {
+                    argBuffer += command[i];
+                    i++;
+                }
+                while(i < command.length && (command[i] !== c && !(c === "[" && command[i] === "]")));
+                if(i < command.length)argBuffer += command[i];
+                args.push(argBuffer);
+                argBuffer = "";
                 break;
-            case "help":
+            default:
+                argBuffer += c;
                 break;
         }
+        //console.log(`------------\n${args}\n${argBuffer}\n${c}\n------------\n`)
     }
-}
-
-/**
- * 
- * @param connection 
- * @param {Discord.Message} message 
- * @param {string} newLang 
- */
-function setLang(connection, message, newLang)
-{
-    let lang = null;
-    switch(newLang.toLowerCase())
-    {
-        case "en":
-        case "english":
-        case "anglais":
-            lang = "en";
-            break;
-        case "fr":
-        case "français":
-        case "francais":
-        case "french":
-            lang = "fr";
-            break;
-        default:
-            //send an error message
-    }
-    if(lang !== null)
-    {
-        connection.query("UPDATE Servers SET Language='" + lang + "' WHERE ServerID=" + message.guild.id)
-        servers.get(message.guild.id).setLanguage(lang);
-    }
-}
-function searchUnusedRoles()
-{
-
+    if(argBuffer.length > 0)args.push(argBuffer);
+    return args;
 }

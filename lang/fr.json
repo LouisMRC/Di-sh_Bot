@@ -13,5 +13,11 @@
 
     "error_no_prefix_specified": "Vous devez indiquer le nouveau préfix",
 
-    "error_no_language_specified": "Vous devez indiquer la nouvelle langue pour ce serveur"
+    "error_no_language_specified": "Vous devez indiquer la nouvelle langue pour ce serveur",
+
+    "settings_update": "La valeur de __$setting__ à été mise à jour (nouvelle valeur: **`$value`**)",
+
+    "help_dialog": "Pourquoi est-ce que tu m'a ping ?\nOh Je sais, tu as besoin d'aide!\nCette commande devrait t'aider: `$prefixhelp`\n(Oh! Et voici mon préfix: **`$prefix`**)",
+    
+    "help_message": ""
 }
