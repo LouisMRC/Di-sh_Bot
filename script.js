@@ -102,27 +102,41 @@ function loadLanguages()
  * @param {ServerConfig} conf 
  * @param locale 
  * @param {Discord.Channel} channel 
- * @param {Discord.User} author 
  */
-async function matchCommand(connection, guild, args, conf, locale, channel, author)
+async function matchCommand(connection, guild, args, conf, locale, channel)
 {
     const ping = (args[args.length -1] === "noping" || servers.get(guild.id).isAutoNOPING()) ? false : true;
     switch(args[0].toLowerCase())
     {
         case "ping":
-            message.channel.send("Pong!")
-                .then(() => message.channel.send(":wink:"));
+            await channel.send("Pong!")
+                .then(async () => await channel.send(":wink:"));
             break;
         case "time":
-            message.channel.send(Date.now());
+            await channel.send(Date.now());
+            break;
+
+
+        case "alias":
+            await Client.commands.get("alias").execute(connection, args, guild, conf, locale, channel);
             break;
         case "role":
-            Client.commands.get("role").execute(args, guild, locale, channel, ping);//args, guild, locale, channel
+            await Client.commands.get("role").execute(args, guild, locale, channel, ping);//args, guild, locale, channel
             break;
         case "settings":
-            Client.commands.get("settings").execute(connection, args, guild, conf, locale, channel);//connection, args, guild, conf, locale, channel
+            await Client.commands.get("settings").execute(connection, args, guild, conf, locale, channel);//connection, args, guild, conf, locale, channel
             break;
         case "help":
+            break;
+        default:
+            await connection.query("SELECT Commands FROM Aliases WHERE ServerID=? AND AliasName=?;", [guild.id, args[0].toLowerCase()])
+                .then(async row => {
+                    if(row.length)
+                        for(let command of row[0].Commands)
+                            await matchCommand(connection, guild, splitCommand(command).concat(args.slice(1)), conf, locale, channel);
+
+                })
+                .catch(console.error);
             break;
     }
 }
@@ -134,7 +148,7 @@ async function matchCommand(connection, guild, args, conf, locale, channel, auth
  * @param {string} command 
  * @param {Discord.Message} message 
  */
-async function commandExe(connection, guild, command, message = null)
+async function commandExe(connection, guild, command, message, aliasArgs = null)
 {
     if(!servers.has(guild.id))
     {
@@ -155,7 +169,7 @@ async function commandExe(connection, guild, command, message = null)
     }
     if(command.startsWith(guildPrefix))command = command.slice(guildPrefix.length);
     const conf = servers.get(guild.id);
-    matchCommand(connection, guild, splitCommand(command), conf, languages.get(conf.getLanguage()), channel)
+    await matchCommand(connection, guild, (aliasArgs === null ? splitCommand(command).concat(aliasArgs) : splitCommand(command)), conf, languages.get(conf.getLanguage()), channel)
 
 }
 

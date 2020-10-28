@@ -1,10 +1,20 @@
+const { Guild, Channel } = require("discord.js");
 const Mention = require("../modules/mention");
 const TextDecorations = require("../modules/textDecorations");
 module.exports = {
     name: 'role',
     description: 'some usefull commands to manipulate roles',
-    execute(args, guild, locale, channel, ping)
+    /**
+     * 
+     * @param {Array} args 
+     * @param {Guild} guild 
+     * @param locale 
+     * @param {Channel} channel 
+     * @param {boolean} ping 
+     */
+    async execute(args, guild, locale, channel, ping)
     {
+        await guild.members.fetch();
         switch(args[1].toLowerCase())
         {
             case "add":
@@ -30,7 +40,9 @@ module.exports = {
                 {
                     guild.members.fetch()
                         .then(members => {
+                            console.log(guild);
                             const member = members.find(mem => mem.user.username === args[2] || mem.nickname === args[2]);
+                            console.log(member.user.name);
                             if(member === undefined)channel.send(locale.undefined_member.replace("$member", args[2]));
                             else channel.send(locale.member_rolecount.replace("$member", ping ? Mention.toUserMention(member.id) : TextDecorations.bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size));
                         })

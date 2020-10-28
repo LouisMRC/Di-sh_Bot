@@ -15,7 +15,7 @@ module.exports = {
      * @param locale 
      * @param {Channel} channel
      */
-    execute(connection, args, guild, conf, locale, channel)
+    async execute(connection, args, guild, conf, locale, channel)
     {
         switch(args[1].toLowerCase())
         {
