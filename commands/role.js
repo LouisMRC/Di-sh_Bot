@@ -14,7 +14,6 @@ module.exports = {
      */
     async execute(args, guild, locale, channel, ping)
     {
-        await guild.members.fetch();
         switch(args[1].toLowerCase())
         {
             case "add":

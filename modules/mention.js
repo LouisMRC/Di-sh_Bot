@@ -1,3 +1,5 @@
+const Discord = require("discord.js");
+
 function isUserMention(str)
 {
     return (str.startsWith("<@!") || str.startsWith("<@")) && str.endsWith(">");
@@ -11,6 +13,19 @@ function isChannelMention(str)
     return str.startsWith("<#") && str.endsWith(">");
 }
 
+// function verifyUserMention(str)
+// {
+//     return ;
+// }
+// function verifyRoleMention(str)
+// {
+//     return str.startsWith("<@&") && str.endsWith(">");
+// }
+// function verifyChannelMention(str)
+// {
+//     return str.startsWith("<#") && str.endsWith(">");
+// }
+
 function toUserMention(userID)
 {
     return "<@" + userID + ">";
@@ -22,6 +37,10 @@ function toRoleMention(roleID)
 function toChannelMention(channelID)
 {
     return "<#" + channelID + ">";
+}
+function toEmojiMention(emojiName, emojiID)
+{
+    return `<:${emojiName}:${emojiID}>`;
 }
 
 function getUserID(mention)
@@ -46,6 +65,7 @@ module.exports = {
     toUserMention,
     toRoleMention,
     toChannelMention,
+    toEmojiMention,
 
     getUserID,
     getRoleID,

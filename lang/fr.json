@@ -19,5 +19,22 @@
 
     "help_dialog": "Pourquoi est-ce que tu m'a ping ?\nOh Je sais, tu as besoin d'aide!\nCette commande devrait t'aider: `$prefixhelp`\n(Oh! Et voici mon préfix: **`$prefix`**)",
     
-    "help_message": ""
+    "help_message": "",
+
+    "type_script_start_alias": "Definition de $alias:\n(Attention, toute commande prefixé serons ignoré et executé normalement)\nUne fois terminé, noubliez pas de sauvegarder votre script(**`$prefixsave`**)\nSinon vous pouvez simplement annuler la saisie(**`$prefixcancel`**)||pratique quand on change d'avis :wink:||",
+
+    "type_script_timeout_alias": "Delais dépasé!!!",
+
+    "type_script_finish_alias": "Script enregistré dans: **$alias**\nVous pouvez désormais l'executer dans ce serveur",
+
+
+    "prompt_emoji_reaction_listener": "Ajoutez une réaction",
+
+    "timeout_reaction_listener": "Delais dépasé!!!",
+
+    "type_script_start_reaction_listener": "Script Pour $emoji:\n(Attention, toute commande prefixé serons ignoré et executé normalement)\nUne fois terminé, noubliez pas de sauvegarder votre script(**`$prefixsave`**)\nSinon vous pouvez simplement annuler la saisie(**`$prefixcancel`**)||pratique quand on change d'avis :wink:||",
+
+    "type_script_finish_reaction_listener": "Script enregistré dans: $emoji",
+
+    "succes_reaction_listener": "$emoji Successfully binded"
 }

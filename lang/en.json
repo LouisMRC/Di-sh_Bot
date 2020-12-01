@@ -19,7 +19,23 @@
 
     "help_dialog": "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)",
     
-    "help_message": ""
+    "help_message": "",
 
 
+    "type_script_start_alias": "Script For $alias:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
+
+    "type_script_timeout_alias": "Timeout!!!",
+
+    "type_script_finish_alias": "Saved As **$alias**\nyou can now use it as a normal command",
+
+
+    "prompt_emoji_reaction_listener": "Add a reaction",
+
+    "timeout_reaction_listener": "Timeout!!!",
+
+    "type_script_start_reaction_listener": "Script For $emoji:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
+
+    "type_script_finish_reaction_listener": "Saved As $emoji",
+
+    "succes_reaction_listener": "$emoji Successfully binded"
 }
