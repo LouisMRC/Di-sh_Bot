@@ -1,4 +1,4 @@
-const Discord = require("discord.js");
+const { Guild } = require("discord.js");
 
 function isUserMention(str)
 {
@@ -13,15 +13,24 @@ function isChannelMention(str)
     return str.startsWith("<#") && str.endsWith(">");
 }
 
-// function verifyUserMention(str)
+// function userExist(str)
 // {
 //     return ;
 // }
-// function verifyRoleMention(str)
+// function memberExist(str)
 // {
-//     return str.startsWith("<@&") && str.endsWith(">");
+//     return ;
 // }
-// function verifyChannelMention(str)
+/**
+ * 
+ * @param {string} str 
+ * @param {Guild} guild 
+ */
+async function roleExist(str, guild)
+{
+    return (await guild.roles.fetch()).cache.has(getRoleID(str));
+}
+// function channelExist(str)
 // {
 //     return str.startsWith("<#") && str.endsWith(">");
 // }
@@ -61,6 +70,8 @@ module.exports = {
     isUserMention,
     isRoleMention,
     isChannelMention,
+
+    roleExist,
     
     toUserMention,
     toRoleMention,

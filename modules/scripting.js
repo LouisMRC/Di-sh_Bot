@@ -2,6 +2,7 @@ const { TextChannel, Collection, Client, Guild, User, Message } = require("disco
 const {languages, loadLanguages} = require("./lang");
 const {removeQuote} = require("./textTransformations");
 const ServerConfig = require("./serverConfig");
+const { windowedText } = require("./textDecorations");
 
 /**
  * 
@@ -47,6 +48,30 @@ function typeScript(channel, member, conf, startMessage, finishMessage, timeoutM
             }
         });
     })
+}
+
+async function promptYesNo(channel, member, conf, message, timeout, defaultAnswer="no")
+{
+    channel.send(message + (defaultAnswer === "yes" ? " (Y/n)" : "y/N"));
+    const answer = new Promise((resolve, reject) => {
+        const filter = msg => msg.author.id === member.id && ["y", "yes", "n", "no"].includes(msg.content.toLowerCase());
+        const collector = channel.createMessageCollector(filter, {max: 1, time: timeout});
+
+        collector.on("end", async (collected, reason) => {
+            if(reason === "limit")resolve(collected.array()[0].content.toLowerCase());
+            else if(reason === "time")resolve(defaultAnswer);
+        });
+    });
+
+    switch(await answer)
+    {
+        case "y":
+        case "yes":
+            return true;
+        case "n":
+        case "no":
+            return false;
+    }
 }
 /**
  * 
@@ -169,6 +194,13 @@ async function matchCommand(client, connection, guild, args, conf, locale, chann
         case "collector_test":
             typeScript(channel, member.id, conf, "Type Some Commands To Test The Collector:", "Finish!!", "TIMEOUT!!!! GRRRRRR!!!!!", 5000)
             .then(inputs => channel.send(`Inputs:\n ${JSON.stringify(inputs)}`));
+            break;
+        case "window_test":
+            channel.send(windowedText("*", "_", "|", 2, 2, "left", args[1]));
+            break;
+
+        case "yes_no":
+            channel.send(`Answer: ${await promptYesNo(channel, member, conf, "Yes or No ?", 10000, "yes")}`);
             break;
         default:
             await connection.query("SELECT Commands FROM Aliases WHERE ServerID=? AND AliasName=?;", [guild.id, args[0].toLowerCase()])
