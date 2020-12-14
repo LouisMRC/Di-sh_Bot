@@ -3,6 +3,7 @@ const {languages, loadLanguages} = require("./lang");
 const {removeQuote} = require("./textTransformations");
 const ServerConfig = require("./serverConfig");
 const { windowedText } = require("./textDecorations");
+const { roleExist } = require("./mention");
 
 /**
  * 
@@ -50,9 +51,18 @@ function typeScript(channel, member, conf, startMessage, finishMessage, timeoutM
     })
 }
 
-async function promptYesNo(channel, member, conf, message, timeout, defaultAnswer="no")
+/**
+ * 
+ * @param {Textchannel} channel 
+ * @param {User} member 
+ * @param {serverconfig} conf 
+ * @param {string} text 
+ * @param {number} timeout 
+ * @param {string} defaultAnswer 
+ */
+async function promptYesNo(channel, member, conf, text, timeout, defaultAnswer="no")
 {
-    channel.send(message + (defaultAnswer === "yes" ? " (Y/n)" : "y/N"));
+    channel.send(text + (defaultAnswer === "yes" ? " [Y/n]" : " [y/N]"));
     const answer = new Promise((resolve, reject) => {
         const filter = msg => msg.author.id === member.id && ["y", "yes", "n", "no"].includes(msg.content.toLowerCase());
         const collector = channel.createMessageCollector(filter, {max: 1, time: timeout});
@@ -86,10 +96,10 @@ async function promptYesNo(channel, member, conf, message, timeout, defaultAnswe
 async function interpretScript(client, connection, guild, conf, channel, member, script)
 {
     //todo: syntax check
-    for(let command of script)
+    for(let instruction of script)
     {
-        console.log(`Executing ${command} :`);
-        commandExe(client, connection, guild, conf, command, channel, member);
+        console.log(`Executing ${instruction} :`);
+        commandExe(client, connection, guild, conf, instruction, channel, member);
     }
 }
 
@@ -117,7 +127,7 @@ function sleep(ms)
  * @param {string} command 
  * @param {Message} message 
  */
-async function prepareCommand(client, connection, guild, conf, command, message, aliasArgs = null)
+async function prepareCommand(client, connection, guild, conf, command, message, scriptArgs = null)
 {
     const guildPrefix = conf.getPrefix();
     let channel;
@@ -128,13 +138,13 @@ async function prepareCommand(client, connection, guild, conf, command, message,
         channel = message.channel;
     }
     if(command.startsWith(guildPrefix))command = command.slice(guildPrefix.length);
-    await commandExe(client, connection, guild, conf, command, channel, message.author , aliasArgs);
+    await commandExe(client, connection, guild, conf, command, channel, message.author , scriptArgs);
 
 }
 
-async function commandExe(client, connection, guild, conf, command, channel, member, aliasArgs = null)
+async function commandExe(client, connection, guild, conf, command, channel, member, scriptArgs = null)
 {
-    await matchCommand(client, connection, guild, (aliasArgs === null ? splitCommand(command) : splitCommand(command).concat(aliasArgs)), conf, languages.get(conf.getLanguage()), channel, member);
+    await matchCommand(client, connection, guild, (scriptArgs === null ? splitCommand(command) : splitCommand(command).concat(scriptArgs)), conf, languages.get(conf.getLanguage()), channel, member);
 }
 
 /**
@@ -161,8 +171,8 @@ async function matchCommand(client, connection, guild, args, conf, locale, chann
             break;
 
 
-        case "alias":
-            await client.commands.get("alias").execute(connection, args, guild, conf, locale, channel, member);
+        case "script":
+            await client.commands.get("script").execute(connection, args, guild, conf, locale, channel, member);
             break;
         case "command_split":
             channel.send(splitCommand(args[1]));
@@ -181,6 +191,9 @@ async function matchCommand(client, connection, guild, args, conf, locale, chann
         case "role":
             await client.commands.get("role").execute(args, guild, locale, channel, ping);//args, guild, locale, channel
             break;
+        case "role-group":
+            await client.commands.get("role-group").execute(connection, args, guild, conf, locale, channel, member)
+            break
         case "say":
             if(args.length > 2)guild.channels.cache.get(args[1]).send(args[2]);
             else channel.send(args[1]);
@@ -202,12 +215,15 @@ async function matchCommand(client, connection, guild, args, conf, locale, chann
         case "yes_no":
             channel.send(`Answer: ${await promptYesNo(channel, member, conf, "Yes or No ?", 10000, "yes")}`);
             break;
+        case "role-exist":
+            channel.send((await roleExist(args[1], guild)) ? "🟢" : "⚠️");
+            break;
         default:
-            await connection.query("SELECT Commands FROM Aliases WHERE ServerID=? AND AliasName=?;", [guild.id, args[0].toLowerCase()])
+            await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [guild.id, args[0].toLowerCase()])
                 .then(async row => {
                     if(row.length)
-                        for(let command of row[0].Commands)
-                            await commandExe(client, connection, guild, conf, command, channel, member, args.slice(1));
+                        for(let instruction of row[0].Script)
+                            await commandExe(client, connection, guild, conf, instruction, channel, member, args.slice(1));
 
                 })
                 .catch(console.error);
@@ -292,6 +308,7 @@ function openClose(char)
 
 module.exports = {
     typeScript,
+    promptYesNo,
     interpretScript,
     sleep,
     prepareCommand,

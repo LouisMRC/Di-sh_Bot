@@ -1,6 +1,8 @@
-const { Guild, TextChannel } = require("discord.js");
+const { Guild, TextChannel, MessageEmbed } = require("discord.js");
 const { isRoleMention, roleExist, getRoleID } = require("../modules/mention");
 const ServerConfig = require("../modules/serverConfig");
+const {promptYesNo} = require("../modules/scripting");
+const { bold } = require("../modules/textDecorations");
 
 module.exports = {
     name: 'role-group',
@@ -14,25 +16,29 @@ module.exports = {
      * @param locale 
      * @param {TextChannel} channel 
      */
-    async execute(connection, args, guild, conf, locale, channel)
+    async execute(connection, args, guild, conf, locale, channel, member)
     {
         switch(args[1].toLowerCase())
         {
-            case "create"://$rolegroup create foobar .....
-                const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [guild.id, args[2]]);
-                if(row.length)
-                {
-                    return;
-                }
+            case "create":
                 let roles = [];
                 for(let arg of args.slice(3))
-                    if(isRoleMention(arg) && roleExist(arg))roles.push(getRoleID(arg));
+                    if(isRoleMention(arg) && roleExist(getRoleID(arg), guild))roles.push(getRoleID(arg));
                     else
                     {
                         channel.send("Bad Input!!!");//hardcoded
                         return;
                     }
-
+                const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [guild.id, args[2]]);
+                let overwrite = false;
+                if(row.length)
+                {
+                    if(!(await promptYesNo(channel, member, conf, "Overwrite ?", 10000)))return;//hardcoded
+                    channel.send("overwrite!!");//hardcoded
+                    overwrite = true;
+                }
+                if(overwrite)await connection.query("UPDATE RoleGroups SET Roles = ? WHERE ServerID=? AND GroupName=?;", [JSON.stringify(roles), guild.id, args[2]]);
+                else await connection.query("INSERT INTO RoleGroups (ServerID, GroupName, Roles) VALUES (?, ?, ?);", [guild.id, args[2], JSON.stringify(roles)]);
                 break;
             case "delete":
                 break;
@@ -43,9 +49,22 @@ module.exports = {
             case "remove":
                 break;
             case "list":
+                const groups = await connection.query("SELECT GroupName, Roles FROM RoleGroups WHERE ServerID=?;", [guild.id]);
+                let message = new MessageEmbed();
+                let list = "";
+                for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, guild)) ? "🟢" : "⚠️"} -${bold(groups[i].GroupName)} - ${groups[i].Roles.length}`
+                message.addField(bold(locale.role_group_list_title), list+locale.role_group_list_missing_role_warning)
+                .setColor("BLUE");
+                channel.send(message);
                 break;
             case "show":
                 break;
         }
     }
+}
+async function checkRoles(roles, guild)
+{
+    for(let role of roles)
+        if(!(await roleExist(role, guild)))return false;
+    return true;
 }

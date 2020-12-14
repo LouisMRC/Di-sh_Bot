@@ -22,11 +22,11 @@
     "help_message": "",
 
 
-    "type_script_start_alias": "Script For $alias:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
+    "script_input_start": "Script For $scriptName:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
 
-    "type_script_timeout_alias": "Timeout!!!",
+    "script_input_timeout": "Timeout!!!",
 
-    "type_script_finish_alias": "Saved As **$alias**\nyou can now use it as a normal command",
+    "script_input_finish": "Saved As **$scriptName**\nyou can now use it as a normal command",
 
 
     "prompt_emoji_reaction_listener": "Add a reaction",
@@ -37,5 +37,13 @@
 
     "type_script_finish_reaction_listener": "Saved As $emoji",
 
-    "succes_reaction_listener": "$emoji Successfully binded"
+    "succes_reaction_listener": "$emoji Successfully binded",
+
+
+    "role_group_list_title": "Role Groups on this Server:",
+
+    "role_group_list_missing_role_warning": "\n\n⚠: Missing Role(s)",
+
+
+    "default_overwrite_question": "Overwrite ?"
 }

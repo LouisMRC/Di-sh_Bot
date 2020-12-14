@@ -26,9 +26,9 @@ function isChannelMention(str)
  * @param {string} str 
  * @param {Guild} guild 
  */
-async function roleExist(str, guild)
+async function roleExist(id, guild)
 {
-    return (await guild.roles.fetch()).cache.has(getRoleID(str));
+    return (await guild.roles.fetch()).cache.has(id);
 }
 // function channelExist(str)
 // {
