@@ -1,21 +1,21 @@
 {
     "landing_message": "Hello World!",
 
-    "unexpected_configReset": "unexpected reset",
-
     "guild_rolecount": "There are $roleCount roles on this server",
 
     "member_rolecount": "$member has $roleCount roles",
 
     "undefined_member": "nope, **$member** is not a valid user(i can't count his roles)",
 
-    "bot_general_settings": "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**",
 
-    "error_no_prefix_specified": "You must specify the new prefix",
+    "settings_general": "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**",
 
-    "error_no_language_specified": "You must specify the new language",
+    "settings_general_error_no_prefix": "You must specify the new prefix",
+
+    "settings_general_error_no_language": "You must specify the new language",
 
     "settings_update": "The value of __$setting__ has been updated (new value: **`$value`**)",
+
 
     "help_dialog": "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)",
     
@@ -28,6 +28,10 @@
 
     "script_input_finish": "Saved As **$scriptName**\nyou can now use it as a normal command",
 
+    "script_list_item": "-$scriptName - $scriptSize lines",
+
+    "script_show_title": "Scripts:",
+
 
     "prompt_emoji_reaction_listener": "Add a reaction",
 
@@ -39,11 +43,17 @@
 
     "succes_reaction_listener": "$emoji Successfully binded",
 
+    "reaction_listener_enabled": "A new Reaction Listener just spawned!",
+
 
     "role_group_list_title": "Role Groups on this Server:",
 
     "role_group_list_missing_role_warning": "\n\n⚠: Missing Role(s)",
 
 
-    "default_overwrite_question": "Overwrite ?"
+    "default_overwrite_question": "Overwrite ?",
+
+    "default_overwrite_message": "Overwrite!!!",
+
+    "default_bad_input_message": "Bad Input!!!"
 }

@@ -1,21 +1,21 @@
 {
     "landing_message": "Ah ah!!\nPetit malin, tu m'as trouvé en regardans le code source...\nNon ?\nImpossible!!!\nJe t'invite à m'expliquer comment tu as fait sur mon GitHub: ```github.com/LouisMrc```",
 
-    "unexpected_configReset": "erreur de base de donnée :confused:",
-
     "guild_rolecount": "Il y a $roleCount rôles sur ce serveur",
 
     "member_rolecount": "$member a $roleCount rôles",
 
     "undefined_member": "Non, **$member** n'existe pas(je ne peux pas compter ses rôles)",
 
-    "bot_general_settings": "Paramètres:\n-Préfix(prefix nouveauPréfix): **`$prefix`**\n-Langue(language nouvelleLangue): **`$language`**\n-noping auto(auto-noping): **`$AutoNOPING`**",
 
-    "error_no_prefix_specified": "Vous devez indiquer le nouveau préfix",
+    "settings_general": "Paramètres:\n-Préfix(prefix nouveauPréfix): **`$prefix`**\n-Langue(language nouvelleLangue): **`$language`**\n-noping auto(auto-noping): **`$AutoNOPING`**",
 
-    "error_no_language_specified": "Vous devez indiquer la nouvelle langue pour ce serveur",
+    "settings_general_error_no_prefix": "Vous devez indiquer le nouveau préfix",
+
+    "settings_general_error_no_language": "Vous devez indiquer la nouvelle langue pour ce serveur",
 
     "settings_update": "La valeur de __$setting__ à été mise à jour (nouvelle valeur: **`$value`**)",
+
 
     "help_dialog": "Pourquoi est-ce que tu m'a ping ?\nOh Je sais, tu as besoin d'aide!\nCette commande devrait t'aider: `$prefixhelp`\n(Oh! Et voici mon préfix: **`$prefix`**)",
     
@@ -26,6 +26,10 @@
     "script_input_timeout": "Delais dépasé!!!",
 
     "script_input_finish": "Script enregistré dans: **$scriptName**\nVous pouvez désormais l'executer dans ce serveur",
+
+    "script_list_item": "-$scriptName - $scriptSize lignes",
+
+    "script_show_title": "Scripts:",
 
 
     "prompt_emoji_reaction_listener": "Ajoutez une réaction",
@@ -38,11 +42,17 @@
 
     "succes_reaction_listener": "$emoji Successfully binded",
 
+    "reaction_listener_enabled": "A new Reaction Listener just spawned!",
+
 
     "role_group_list_title": "Groupes de Role sur ce serveur:",
 
     "role_group_list_missing_role_warning": "\n\n⚠: Un ou plusieurs roles du groupe on était supprimé",
 
 
-    "default_overwrite_question": "Écraser ?"
+    "default_overwrite_question": "Écraser ?",
+
+    "default_overwrite_message": "Overwrite!!!",
+
+    "default_bad_input_message": "Erreur de saisie!!!"
 }

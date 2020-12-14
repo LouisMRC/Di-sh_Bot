@@ -78,7 +78,7 @@ module.exports = {
                             break;
                         }
                         await connection.query("INSERT INTO ReactionListeners (ServerID, ChannelID, MessageID) VALUES(?, ?, ?);", [ids[0], ids[1], ids[2]]);
-                        channel.send("A new Reaction Listener just spawned!");//hardcoded
+                        channel.send(locale.reaction_listener_enabled);
                         break;
                 }
                 break;

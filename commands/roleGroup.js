@@ -26,15 +26,15 @@ module.exports = {
                     if(isRoleMention(arg) && roleExist(getRoleID(arg), guild))roles.push(getRoleID(arg));
                     else
                     {
-                        channel.send("Bad Input!!!");//hardcoded
+                        channel.send(locale.default_bad_input_message);
                         return;
                     }
                 const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [guild.id, args[2]]);
                 let overwrite = false;
                 if(row.length)
                 {
-                    if(!(await promptYesNo(channel, member, conf, "Overwrite ?", 10000)))return;//hardcoded
-                    channel.send("overwrite!!");//hardcoded
+                    if(!(await promptYesNo(channel, member, conf, locale.default_overwrite_question, 10000)))return;
+                    channel.send(locale.default_overwrite_message);
                     overwrite = true;
                 }
                 if(overwrite)await connection.query("UPDATE RoleGroups SET Roles = ? WHERE ServerID=? AND GroupName=?;", [JSON.stringify(roles), guild.id, args[2]]);

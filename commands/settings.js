@@ -5,7 +5,7 @@ Discord = require("discord.js");
 GuildConf = require("../modules/serverConfig");
 module.exports = {
     name: 'settings',
-    description: 'bot settings commands',
+    description: 'bot settings',
     /**
      * 
      * @param connection 
@@ -20,7 +20,7 @@ module.exports = {
         switch(args[1].toLowerCase())
         {
             case "show":
-                channel.send(locale.bot_general_settings.replace("$prefix", conf.getPrefix()).replace("$language", conf.getLanguage()).replace("$AutoNOPING", (conf.isAutoNOPING() ? "ON" : "OFF")));
+                channel.send(locale.settings_general.replace("$prefix", conf.getPrefix()).replace("$language", conf.getLanguage()).replace("$AutoNOPING", (conf.isAutoNOPING() ? "ON" : "OFF")));
                 break;
             case "edit":
                 switch(args[2].toLowerCase())
@@ -28,7 +28,7 @@ module.exports = {
                     case "prefix":
                         if(args.length < 4)
                         {
-                            channel.send(locale.error_no_prefix_specified);
+                            channel.send(locale.settings_general_error_no_prefix);
                             break;
                         }
                         connection.query("UPDATE Servers SET CommandPrefix='" + args[3] + "' WHERE ServerID=" + guild.id)
@@ -38,7 +38,7 @@ module.exports = {
                     case "language":
                         if(args.length < 4)
                         {
-                            channel.send(locale.error_no_language_specified);
+                            channel.send(locale.settings_general_error_no_language);
                             break;
                         }
                         if(setLang(connection, guild, conf, args[3]) === null)/*Send An Error Message*/;

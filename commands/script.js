@@ -51,8 +51,8 @@ module.exports = {
                 const scripts = await connection.query("SELECT ScriptName, Script FROM Scripts WHERE ServerID=?;", [guild.id]);
                 var message = new MessageEmbed();
                 let list = "";
-                for(let i = 0; i < scripts.length; i++)list += `${i ? "\n" : ""} -${bold(scripts[i].ScriptName)} - ${scripts[i].Script.length} lines`;//hardcoded
-                message.addField(bold("Scripts:"), list)//hardcoded
+                for(let i = 0; i < scripts.length; i++)list += (i ? "\n" : "") + locale.script_list_item.replace("$scriptName", bold(scripts[i].ScriptName)).replace("$scriptSize", scripts[i].Script.length);
+                message.addField(bold(locale.script_show_title), list)
                 .setColor("BLUE");
                 channel.send(message);
                 break;

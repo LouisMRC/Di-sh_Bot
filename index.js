@@ -39,8 +39,8 @@ pool.getConnection()
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
             if(newMessage.editedAt !== null && ((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
             {
-                const servConf = await getServer(connection, message.guild.id, true);
-                prepareCommand(Client, connection, newMessage.guild, servConf, message.content, message);
+                const servConf = await getServer(connection, newMessage.guild.id, true);
+                prepareCommand(Client, connection, newMessage.guild, servConf, newMessage.content, newMessage);
 
                 if(isUserMention(newMessage.content) && getUserID(newMessage.content) === Client.user.id)newMessage.reply(languages.get(servConf.getLanguage()).help_dialog.replace("$prefix", servConf.getPrefix()).replace("$prefix", servConf.getPrefix()));
             }
