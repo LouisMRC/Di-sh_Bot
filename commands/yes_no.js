@@ -9,7 +9,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         env.channel.send(`Answer: ${await promptYesNo(env.channel, env.user, env.serverConfig, "Yes or No ?", 10000, "yes")}`);
         return env;

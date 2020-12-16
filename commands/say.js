@@ -9,7 +9,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         if(args.length > 2)env.server.channels.cache.get(args[1]).send(args[2]);
         else env.channel.send(args[1]);

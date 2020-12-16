@@ -86,7 +86,7 @@ class execEnv
  * @param {number} idleTimeout
  */
 
-function scriptEditor(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
+function scriptCreator(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
 {
     return new Promise((resolve, reject) => {
         const filter = msg => msg.author.id === member.id;
@@ -96,6 +96,53 @@ function scriptEditor(channel, member, conf, startMessage, finishMessage, timeou
         collector.on("collect", message => {
             if(message.content.startsWith(`${conf.getPrefix()}save`))collector.stop("save");
             else if(message.content.startsWith(`${conf.getPrefix()}cancel`))collector.stop("abort");
+        })
+
+        collector.on("end", async (collected, reason) => {
+
+            switch(reason)
+            {
+                case "abort":
+                    reject(reason);
+                    break;
+                case "idle":
+                    await channel.send(timeoutMessage);
+                    reject(reason);
+                    break;
+                case "save":
+                    await channel.send(finishMessage);
+                    resolve(messageFilter(conf.getPrefix(), collected.array(), false));
+                    break;
+                default:
+                    reject(reason);
+                    break;
+            }
+        });
+    })
+}
+
+/**
+ * 
+ * @param {Client} client
+ * @param {import("mariadb").PoolConnection} connection
+ * @param {execEnv} env
+ * @param {string} startMessage
+ * @param {string} finishMessage
+ * @param {string} timeoutMessage
+ * @param {number} idleTimeout
+ */
+
+function scriptEditor(client, connection, env, startMessage, finishMessage, timeoutMessage, idleTimeout)
+{
+    return new Promise((resolve, reject) => {
+        const filter = msg => msg.author.id === env.user.id;
+        env.channel.send(startMessage);
+        const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
+
+        collector.on("collect", message => {
+            if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))collector.stop("save");
+            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}cancel`))collector.stop("abort");
+            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
         })
 
         collector.on("end", async (collected, reason) => {
@@ -242,7 +289,7 @@ async function commandExe(client, connection, env, args)
     const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
     const comOutput = args[args.length -1] !== "noOutput";
 
-    if(client.commands.has(args[0].toLowerCase()))await client.commands.get(args[0].toLowerCase()).execute(connection, env, args);
+    if(client.commands.has(args[0].toLowerCase()))await client.commands.get(args[0].toLowerCase()).execute(client, connection, env, args);
     else
     {
         env = await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
@@ -333,6 +380,7 @@ function openClose(char)
 module.exports = {
     execEnv,
 
+    scriptCreator,
     scriptEditor,
     promptYesNo,
     interpretScript,

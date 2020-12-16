@@ -10,7 +10,7 @@ module.exports = {
      * @param {Array<string>} args 
      * @param {boolean} ping 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         switch(args[1].toLowerCase())
         {

@@ -10,7 +10,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         env.channel.send((await roleExist(args[1], env.server)) ? "🟢" : "⚠️");
         return env;

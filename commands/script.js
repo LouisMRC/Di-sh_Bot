@@ -12,7 +12,7 @@ module.exports = {
     * @param {execEnv} env
     * @param {Array} args 
     */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         switch(args[1])
         {
@@ -24,7 +24,7 @@ module.exports = {
                         // env.channel.send(env.serverLocale.)
                         break;
                     }
-                    await scriptEditor(env.channel, env.user, env.serverConfig, env.serverLocale.script_input_start.replace("$scriptName", args[2]).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.script_input_finish.replace("$scriptName", args[2]), env.serverLocale.script_input_timeout, 120_000)
+                    await scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.script_input_start.replace("$scriptName", args[2]).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.script_input_finish.replace("$scriptName", args[2]), env.serverLocale.script_input_timeout, 120_000)
                     .then(async (commands) => await connection.query("INSERT INTO Scripts (ServerID, ScriptName, script) VALUES (?, ?, ?);", [env.server.id, args[2].toLowerCase(), JSON.stringify(commands)]))
                     .catch(err => {if(err === "abort")env.channel.send("Abort!!")});
                 }
@@ -41,6 +41,11 @@ module.exports = {
             case "delete":
                 break;
             case "edit":
+                break;
+            case "editor":
+                await scriptEditor(client, connection, env, "Script Editor:", "finished", "timeout", 120_000)
+                    .then()
+                    .catch();
                 break;
             case "list":
                 const scripts = await connection.query("SELECT ScriptName, Script FROM Scripts WHERE ServerID=?;", [env.server.id]);

@@ -13,7 +13,7 @@ module.exports = {
      * @param {execEnv} env
      * @param {Array<string>} args 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         switch(args[1].toLowerCase())
         {

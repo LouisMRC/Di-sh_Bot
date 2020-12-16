@@ -1,7 +1,7 @@
 const { Message, Client, Guild, TextChannel, User } = require("discord.js");
 const {enableReact, singleEmojiRequest} = require("../modules/listener");
 const { toEmojiMention } = require("../modules/mention");
-const { scriptEditor, execEnv } = require("../modules/scripting");
+const { scriptCreator, execEnv } = require("../modules/scripting");
 const ServerConfig = require("../modules/serverConfig");
 
 module.exports = {
@@ -36,7 +36,7 @@ module.exports = {
                         .then(react => {
                             const emoji = (react.emoji.id === null ? react.emoji.name : toEmojiMention(react.emoji.name, react.emoji.id));
                             for(let command of commands)if(command[0] === emoji)return;
-                            scriptEditor(env.channel, env.user, env.serverConfig, env.serverLocale.type_script_start_reaction_listener.replace("$emoji", emoji).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.type_script_finish_reaction_listener.replace("$emoji", emoji), env.serverLocale.timeout_reaction_listener, 60_000)
+                            scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.type_script_start_reaction_listener.replace("$emoji", emoji).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.type_script_finish_reaction_listener.replace("$emoji", emoji), env.serverLocale.timeout_reaction_listener, 60_000)
                             .then(script => {
                                 commands.push([emoji, script]);
                                 connection.query("UPDATE ReactionListeners SET Commands=? WHERE ListenerID=?;", [JSON.stringify(commands), rows[0].ListenerID])

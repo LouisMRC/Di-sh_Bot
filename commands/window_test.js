@@ -11,7 +11,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(connection, env, args)
+    async execute(client, connection, env, args)
     {
         env.channel.send(windowedText("*", "_", "|", 2, 2, "left", args[1]));
         return env;
