@@ -58,6 +58,7 @@ module.exports = {
                 env.channel.send(message);
                 break;
         }
+        return env;
     }
 }
 /**

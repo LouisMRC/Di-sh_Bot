@@ -13,5 +13,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         env.channel.send((await roleExist(args[1], env.server)) ? "🟢" : "⚠️");
+        return env;
     }
 }

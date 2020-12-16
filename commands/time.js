@@ -12,5 +12,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         await env.channel.send(Date.now());
+        return env;
     }
 }

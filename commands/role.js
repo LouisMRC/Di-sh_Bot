@@ -49,6 +49,7 @@ module.exports = {
             case "show":
                 break;
         }
+        return env;
     }
 }
 function searchUnusedRoles()

@@ -13,5 +13,6 @@ module.exports = {
     {
         await env.channel.send("Pong!")
             .then(async () => await env.channel.send(":wink:"));
+        return env;
     }
 }

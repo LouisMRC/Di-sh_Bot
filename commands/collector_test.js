@@ -13,5 +13,6 @@ module.exports = {
     {
         scriptEditor(env.channel, env.user.id, env.serverConfig, "Type Some Commands To Test The Collector:", "Finish!!", "TIMEOUT!!!! GRRRRRR!!!!!", 5000)
             .then(inputs => env.channel.send(`Inputs:\n ${JSON.stringify(inputs)}`));
+        return env;
     }
 }

@@ -31,5 +31,6 @@ module.exports = {
                 }
                 break;
         }
+        return env;
     }
 }

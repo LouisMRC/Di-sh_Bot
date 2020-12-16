@@ -14,5 +14,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         env.channel.send(windowedText("*", "_", "|", 2, 2, "left", args[1]));
+        return env;
     }
 }

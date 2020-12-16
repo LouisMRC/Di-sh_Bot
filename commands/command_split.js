@@ -12,5 +12,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         env.channel.send(splitCommand(args[1]));
+        return env;
     }
 }

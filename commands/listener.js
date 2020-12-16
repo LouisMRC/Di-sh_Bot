@@ -85,5 +85,6 @@ module.exports = {
             case "delete":
                 break;
         }
+        return env;
     }
 }

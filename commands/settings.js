@@ -50,6 +50,7 @@ module.exports = {
                 }
                 break
         }
+        return env;
     }
 }
 function setLang(connection, guild, conf, newLang)

@@ -12,5 +12,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         env.channel.send(`Answer: ${await promptYesNo(env.channel, env.user, env.serverConfig, "Yes or No ?", 10000, "yes")}`);
+        return env;
     }
 }

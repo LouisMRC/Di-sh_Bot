@@ -12,5 +12,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         await (await env.channel.messages.fetch(args[1])).react(args[2]);
+        return env;
     }
 }

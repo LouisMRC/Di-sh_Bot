@@ -226,7 +226,7 @@ async function interpretScript(client, connection, env, script)
     for(let instruction of script)
     {
         console.log(`Executing ${instruction} :`);
-        await commandExe(client, connection, env, splitCommand(instruction));
+        env = await commandExe(client, connection, env, splitCommand(instruction));
     }
 }
 
@@ -245,13 +245,14 @@ async function commandExe(client, connection, env, args)
     if(client.commands.has(args[0].toLowerCase()))await client.commands.get(args[0].toLowerCase()).execute(connection, env, args);
     else
     {
-        await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
+        env = await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
         .then(async row => {
             if(row.length)
-                await interpretScript(client, connection, env, row[0].Script);                    
+                await interpretScript(client, connection, env, row[0].Script);//todo isolate user/script env              
         })
         .catch(console.error);
     }
+    return env;
 }
 
 /**

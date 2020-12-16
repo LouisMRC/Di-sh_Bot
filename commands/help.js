@@ -12,5 +12,6 @@ module.exports = {
     async execute(connection, env, args)
     {
         //todo: help
+        return env;
     }
 }

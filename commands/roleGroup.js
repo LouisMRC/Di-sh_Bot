@@ -57,6 +57,7 @@ module.exports = {
             case "show":
                 break;
         }
+        return env;
     }
 }
 async function checkRoles(roles, guild)

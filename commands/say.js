@@ -13,5 +13,6 @@ module.exports = {
     {
         if(args.length > 2)env.server.channels.cache.get(args[1]).send(args[2]);
         else env.channel.send(args[1]);
+        return env;
     }
 }
