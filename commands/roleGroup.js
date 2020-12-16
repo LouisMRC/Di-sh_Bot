@@ -1,7 +1,7 @@
 const { Guild, TextChannel, MessageEmbed } = require("discord.js");
 const { isRoleMention, roleExist, getRoleID } = require("../modules/mention");
 const ServerConfig = require("../modules/serverConfig");
-const {promptYesNo} = require("../modules/scripting");
+const {promptYesNo, execEnv} = require("../modules/scripting");
 const { bold } = require("../modules/textDecorations");
 
 module.exports = {
@@ -10,13 +10,10 @@ module.exports = {
     /**
      * 
      * @param {import("mariadb").PoolConnection} connection 
+     * @param {execEnv} env
      * @param {Array<string>} args 
-     * @param {Guild} guild 
-     * @param {ServerConfig} conf 
-     * @param locale 
-     * @param {TextChannel} channel 
      */
-    async execute(connection, args, guild, conf, locale, channel, member)
+    async execute(connection, env, args)
     {
         switch(args[1].toLowerCase())
         {
@@ -26,19 +23,19 @@ module.exports = {
                     if(isRoleMention(arg) && roleExist(getRoleID(arg), guild))roles.push(getRoleID(arg));
                     else
                     {
-                        channel.send(locale.default_bad_input_message);
+                        env.channel.send(env.serverLocale.default_bad_input_message);
                         return;
                     }
-                const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [guild.id, args[2]]);
+                const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [env.server.id, args[2]]);
                 let overwrite = false;
                 if(row.length)
                 {
-                    if(!(await promptYesNo(channel, member, conf, locale.default_overwrite_question, 10000)))return;
-                    channel.send(locale.default_overwrite_message);
+                    if(!(await promptYesNo(env.channel, env.user, env.serverConfig, env.serverLocale.default_overwrite_question, 10000)))return;
+                    env.channel.send(env.serverLocale.default_overwrite_message);
                     overwrite = true;
                 }
-                if(overwrite)await connection.query("UPDATE RoleGroups SET Roles = ? WHERE ServerID=? AND GroupName=?;", [JSON.stringify(roles), guild.id, args[2]]);
-                else await connection.query("INSERT INTO RoleGroups (ServerID, GroupName, Roles) VALUES (?, ?, ?);", [guild.id, args[2], JSON.stringify(roles)]);
+                if(overwrite)await connection.query("UPDATE RoleGroups SET Roles = ? WHERE ServerID=? AND GroupName=?;", [JSON.stringify(roles), env.server.id, args[2]]);
+                else await connection.query("INSERT INTO RoleGroups (ServerID, GroupName, Roles) VALUES (?, ?, ?);", [env.server.id, args[2], JSON.stringify(roles)]);
                 break;
             case "delete":
                 break;
@@ -49,13 +46,13 @@ module.exports = {
             case "remove":
                 break;
             case "list":
-                const groups = await connection.query("SELECT GroupName, Roles FROM RoleGroups WHERE ServerID=?;", [guild.id]);
+                const groups = await connection.query("SELECT GroupName, Roles FROM RoleGroups WHERE ServerID=?;", [env.server.id]);
                 let message = new MessageEmbed();
                 let list = "";
-                for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, guild)) ? "🟢" : "⚠️"} -${bold(groups[i].GroupName)} - ${groups[i].Roles.length}`
-                message.addField(bold(locale.role_group_list_title), list+locale.role_group_list_missing_role_warning)
+                for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, env.server)) ? "🟢" : "⚠️"} -${bold(groups[i].GroupName)} - ${groups[i].Roles.length}`
+                message.addField(bold(env.serverLocale.role_group_list_title), list+env.serverLocale.role_group_list_missing_role_warning)
                 .setColor("BLUE");
-                channel.send(message);
+                env.channel.send(message);
                 break;
             case "show":
                 break;

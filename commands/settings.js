@@ -1,4 +1,5 @@
 const { Guild, Channel } = require("discord.js");
+const { execEnv } = require("../modules/scripting");
 const ServerConfig = require("../modules/serverConfig");
 
 Discord = require("discord.js");
@@ -8,19 +9,16 @@ module.exports = {
     description: 'bot settings',
     /**
      * 
-     * @param connection 
-     * @param {Array} args 
-     * @param {Guild} guild 
-     * @param {ServerConfig} conf 
-     * @param locale 
-     * @param {Channel} channel
+     * @param {import("mariadb").PoolConnection} connection 
+     * @param {execEnv} env
+     * @param {Array<string>} args 
      */
-    async execute(connection, args, guild, conf, locale, channel)
+    async execute(connection, env, args)
     {
         switch(args[1].toLowerCase())
         {
             case "show":
-                channel.send(locale.settings_general.replace("$prefix", conf.getPrefix()).replace("$language", conf.getLanguage()).replace("$AutoNOPING", (conf.isAutoNOPING() ? "ON" : "OFF")));
+                env.channel.send(env.serverLocale.settings_general.replace("$prefix", env.serverConfig.getPrefix()).replace("$language", env.serverConfig.getLanguage()).replace("$AutoNOPING", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")));
                 break;
             case "edit":
                 switch(args[2].toLowerCase())
@@ -28,26 +26,26 @@ module.exports = {
                     case "prefix":
                         if(args.length < 4)
                         {
-                            channel.send(locale.settings_general_error_no_prefix);
+                            env.channel.send(env.serverLocale.settings_general_error_no_prefix);
                             break;
                         }
-                        connection.query("UPDATE Servers SET CommandPrefix='" + args[3] + "' WHERE ServerID=" + guild.id)
+                        connection.query("UPDATE Servers SET CommandPrefix=? WHERE ServerID=?", [args[3], env.server.id])
                         conf.setPrefix(args[3]);
-                        channel.send(locale.settings_update.replace("$setting", "prefix").replace("$value", conf.getPrefix()))
+                        channel.send(env.serverLocale.settings_update.replace("$setting", "prefix").replace("$value", env.serverConfig.getPrefix()))
                         break;
                     case "language":
                         if(args.length < 4)
                         {
-                            channel.send(locale.settings_general_error_no_language);
+                            env.channel.send(env.serverLocale.settings_general_error_no_language);
                             break;
                         }
-                        if(setLang(connection, guild, conf, args[3]) === null)/*Send An Error Message*/;
-                        else channel.send(locale.settings_update.replace("$setting", "language").replace("$value", conf.getLanguage()))
+                        if(setLang(connection, env.server, env.serverConfig, args[3]) === null)/*Send An Error Message*/;
+                        else env.channel.send(env.serverLocale.settings_update.replace("$setting", "language").replace("$value", env.serverConfig.getLanguage()))
                         break;
                     case "auto-noping":
-                        connection.query("UPDATE Servers SET AutoNOPING=" + !conf.isAutoNOPING() + " WHERE ServerID=" + guild.id)
-                        conf.setAutoNOPING(!conf.isAutoNOPING());
-                        channel.send(locale.settings_update.replace("$setting", "auto-noping").replace("$value", (conf.isAutoNOPING() ? "ON" : "OFF")))
+                        connection.query("UPDATE Servers SET AutoNOPING=? WHERE ServerID=?", [!env.serverConfig.isAutoNOPING(), env.server.id])
+                        env.serverConfig.setAutoNOPING(!env.serverConfig.isAutoNOPING());
+                        env.channel.send(env.serverLocale.settings_update.replace("$setting", "auto-noping").replace("$value", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")))
                         break;
                 }
                 break

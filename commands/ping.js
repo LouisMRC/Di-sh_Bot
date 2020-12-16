@@ -1,8 +1,8 @@
 const { execEnv } = require("../modules/scripting");
 
 module.exports = {
-    name: 'emoji',
-    description: 'emoji commands',
+    name: 'ping',
+    description: 'pong ;)',
     /**
      * 
      * @param {execEnv} env
@@ -11,6 +11,7 @@ module.exports = {
      */
     async execute(connection, env, args)
     {
-        
+        await env.channel.send("Pong!")
+            .then(async () => await env.channel.send(":wink:"));
     }
 }

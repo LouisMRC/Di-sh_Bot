@@ -4,6 +4,76 @@ const {removeQuote} = require("./textTransformations");
 const ServerConfig = require("./serverConfig");
 const { windowedText } = require("./textDecorations");
 const { roleExist } = require("./mention");
+const { getServer } = require("./db");
+
+
+class execEnv
+{
+    /**
+     * 
+     * @param {Guild} server 
+     * @param {ServerConfig} serverConfig 
+     * @param serverLocale 
+     * @param {User} user 
+     */
+    constructor(server, serverConfig, serverLocale, channel, user, context)
+    {
+        this.m_Server = server;
+        this.m_ServerConfig = serverConfig;
+        this.m_ServerLocale = serverLocale;
+        this.m_CurrentChannel = channel;
+        this.m_User = user;
+        this.m_Context = context;
+    }
+    get server()
+    {
+        return this.m_Server;
+    }
+    get serverConfig()
+    {
+        return this.m_ServerConfig;
+    }
+    get serverLocale()
+    {
+        return this.m_ServerLocale;
+    }
+    get channel()
+    {
+        return this.m_CurrentChannel;
+    }
+    get user()
+    {
+        return this.m_User;
+    }
+    get context()
+    {
+        return this.m_Context;
+    }
+    set server(server)
+    {
+        this.m_Server = server;
+    }
+    set serverConfig(serverConfig)
+    {
+        this.m_ServerConfig = serverConfig;
+    }
+    set serverLocale(serverLocale)
+    {
+        this.m_ServerLocale = serverLocale;
+    }
+    set channel(channel)
+    {
+        this.m_CurrentChannel = channel;
+    }
+    set user(user)
+    {
+        this.m_User = user;
+    }
+    set context(context)
+    {
+        this.m_Context = context;
+    }
+}
 
 /**
  * 
@@ -16,7 +86,7 @@ const { roleExist } = require("./mention");
  * @param {number} idleTimeout
  */
 
-function typeScript(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
+function scriptEditor(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
 {
     return new Promise((resolve, reject) => {
         const filter = msg => msg.author.id === member.id;
@@ -41,7 +111,7 @@ function typeScript(channel, member, conf, startMessage, finishMessage, timeoutM
                     break;
                 case "save":
                     await channel.send(finishMessage);
-                    resolve(commandFilter(conf.getPrefix(), collected.array()));
+                    resolve(messageFilter(conf.getPrefix(), collected.array(), false));
                     break;
                 default:
                     reject(reason);
@@ -83,38 +153,45 @@ async function promptYesNo(channel, member, conf, text, timeout, defaultAnswer="
             return false;
     }
 }
+
 /**
  * 
- * @param {Client} client 
- * @param {import("mariadb").PoolConnection} connection 
- * @param {Guild} guild 
- * @param {ServerConfig} conf 
- * @param {TextChannel} channel 
- * @param {User} member 
- * @param {Array<string>} script 
+ * @param {string} prefix 
+ * @param {array<Message>} commands 
  */
-async function interpretScript(client, connection, guild, conf, channel, member, script)
+function messageFilter(prefix, commands, withPrefix)
 {
-    //todo: syntax check
-    for(let instruction of script)
-    {
-        console.log(`Executing ${instruction} :`);
-        commandExe(client, connection, guild, conf, instruction, channel, member);
-    }
+    let output = [];
+    commands.forEach(command => {if(!(startWithPrefix(prefix, command.content) ^ withPrefix))output.push(command.content)});
+    return output;
 }
 
 /**
  * 
  * @param {string} prefix 
- * @param {Collection} commands 
+ * @param {array<string>} commands 
  */
-function commandFilter(prefix, commands)
+function commandFilter(prefix, commands, withPrefix)
 {
     let output = [];
-    commands.forEach(command => {if(!command.content.startsWith(prefix))output.push(command.content)});
+    for(let command of commands)
+        if(!(startWithPrefix(prefix, command) ^ withPrefix))output.push(command);
     return output;
 }
+/**
+ * 
+ * @param {string} prefix 
+ * @param {string} command 
+ */
+function startWithPrefix(prefix, command)
+{
+    return command.startsWith(prefix);
+}
 
+/**
+ * 
+ * @param {number} ms 
+ */
 function sleep(ms)
 {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -122,112 +199,58 @@ function sleep(ms)
 
 /**
  * 
- * @param connection 
- * @param {Guild} guild 
- * @param {string} command 
+ * @param {Client} client
+ * @param {import("mariadb").PoolConnection} connection 
  * @param {Message} message 
  */
-async function prepareCommand(client, connection, guild, conf, command, message, scriptArgs = null)
+async function interpretUserInput(client, connection, message)
 {
-    const guildPrefix = conf.getPrefix();
-    let channel;
-    if(message === null)channel = guild.systemChannel;
-    else
+    const conf = await getServer(connection, message.guild.id, true);
+    for(let line of commandFilter(conf.getPrefix(), message.content.split("\n"), true))
     {
-        if(!command.startsWith(guildPrefix))return;
-        channel = message.channel;
+        await commandExe(client, connection, new execEnv(message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user"), splitCommand(line.slice(conf.getPrefix().length)));
     }
-    if(command.startsWith(guildPrefix))command = command.slice(guildPrefix.length);
-    await commandExe(client, connection, guild, conf, command, channel, message.author , scriptArgs);
-
-}
-
-async function commandExe(client, connection, guild, conf, command, channel, member, scriptArgs = null)
-{
-    await matchCommand(client, connection, guild, (scriptArgs === null ? splitCommand(command) : splitCommand(command).concat(scriptArgs)), conf, languages.get(conf.getLanguage()), channel, member);
 }
 
 /**
  * 
+ * @param {Client} client 
  * @param {import("mariadb").PoolConnection} connection 
- * @param {Guild} guild 
- * @param {Array} args 
- * @param {ServerConfig} conf 
- * @param locale 
- * @param {TextChannel} channel 
+ * @param {execEnv} env 
+ * @param {Array<string>} script 
  */
-async function matchCommand(client, connection, guild, args, conf, locale, channel, member)
+async function interpretScript(client, connection, env, script)
 {
-    const ping = (args[args.length -1] === "noping" || conf.isAutoNOPING()) ? false : true;
-    const comOutput = args[args.length -1] !== "noOutput";
-    switch(args[0].toLowerCase())
+    //todo: syntax check
+    env.context = "script"
+    for(let instruction of script)
     {
-        case "ping":
-            await channel.send("Pong!")
-                .then(async () => await channel.send(":wink:"));
-            break;
-        case "time":
-            await channel.send(Date.now());
-            break;
+        console.log(`Executing ${instruction} :`);
+        await commandExe(client, connection, env, splitCommand(instruction));
+    }
+}
 
+/**
+ * 
+ * @param {Client} client
+ * @param {import("mariadb").PoolConnection} connection 
+ * @param {execEnv} env 
+ * @param {Array} args 
+ */
+async function commandExe(client, connection, env, args)
+{
+    const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
+    const comOutput = args[args.length -1] !== "noOutput";
 
-        case "script":
-            await client.commands.get("script").execute(connection, args, guild, conf, locale, channel, member);
-            break;
-        case "command_split":
-            channel.send(splitCommand(args[1]));
-            break;
-        case "delay":
-            await sleep(parseInt(args[1]));
-        case "help":
-            break;
-        case "listener":
-            await client.commands.get("listener").execute(client, connection, args, guild, conf, locale, channel, member);
-            break;
-        case "react":
-            console.log(args[2]);
-            await (await channel.messages.fetch(args[1])).react(args[2]);
-            break;
-        case "role":
-            await client.commands.get("role").execute(args, guild, locale, channel, ping);//args, guild, locale, channel
-            break;
-        case "role-group":
-            await client.commands.get("role-group").execute(connection, args, guild, conf, locale, channel, member)
-            break
-        case "say":
-            if(args.length > 2)guild.channels.cache.get(args[1]).send(args[2]);
-            else channel.send(args[1]);
-            break;
-        case "settings":
-            await client.commands.get("settings").execute(connection, args, guild, conf, locale, channel);//connection, args, guild, conf, locale, channel
-            break;
-        case "var":
-        case "let":
-            break;
-        case "collector_test":
-            typeScript(channel, member.id, conf, "Type Some Commands To Test The Collector:", "Finish!!", "TIMEOUT!!!! GRRRRRR!!!!!", 5000)
-            .then(inputs => channel.send(`Inputs:\n ${JSON.stringify(inputs)}`));
-            break;
-        case "window_test":
-            channel.send(windowedText("*", "_", "|", 2, 2, "left", args[1]));
-            break;
-
-        case "yes_no":
-            channel.send(`Answer: ${await promptYesNo(channel, member, conf, "Yes or No ?", 10000, "yes")}`);
-            break;
-        case "role-exist":
-            channel.send((await roleExist(args[1], guild)) ? "🟢" : "⚠️");
-            break;
-        default:
-            await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [guild.id, args[0].toLowerCase()])
-                .then(async row => {
-                    if(row.length)
-                        for(let instruction of row[0].Script)
-                            await commandExe(client, connection, guild, conf, instruction, channel, member, args.slice(1));
-
-                })
-                .catch(console.error);
-            break;
+    if(client.commands.has(args[0].toLowerCase()))await client.commands.get(args[0].toLowerCase()).execute(connection, env, args);
+    else
+    {
+        await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
+        .then(async row => {
+            if(row.length)
+                await interpretScript(client, connection, env, row[0].Script);                    
+        })
+        .catch(console.error);
     }
 }
 
@@ -307,12 +330,13 @@ function openClose(char)
 }
 
 module.exports = {
-    typeScript,
+    execEnv,
+
+    scriptEditor,
     promptYesNo,
     interpretScript,
+    interpretUserInput,
     sleep,
-    prepareCommand,
     commandExe,
-    matchCommand,
     splitCommand
 }

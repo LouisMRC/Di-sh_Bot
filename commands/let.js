@@ -1,8 +1,8 @@
 const { execEnv } = require("../modules/scripting");
 
 module.exports = {
-    name: 'emoji',
-    description: 'emoji commands',
+    name: 'let',
+    description: 'create a variable',
     /**
      * 
      * @param {execEnv} env
@@ -11,6 +11,6 @@ module.exports = {
      */
     async execute(connection, env, args)
     {
-        
+        //todo: variable
     }
 }

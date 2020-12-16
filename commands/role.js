@@ -1,18 +1,17 @@
 const { Guild, Channel } = require("discord.js");
-const Mention = require("../modules/mention");
-const TextDecorations = require("../modules/textDecorations");
+const { isUserMention, toUserMention, getUserID } = require("../modules/mention");
+const { execEnv } = require("../modules/scripting");
+const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'role',
     description: 'some usefull commands to manipulate roles',
     /**
      * 
+     * @param {execEnv} env
      * @param {Array} args 
-     * @param {Guild} guild 
-     * @param locale 
-     * @param {Channel} channel 
      * @param {boolean} ping 
      */
-    async execute(args, guild, locale, channel, ping)
+    async execute(env, args, ping)//todo: add ping to env vars (scripting.js)
     {
         switch(args[1].toLowerCase())
         {
@@ -25,25 +24,24 @@ module.exports = {
             case "count":
                 if(args.length < 3 || args[2].toLowerCase() === "all")
                 {
-                    guild.roles.fetch()
-                        .then(roles => channel.send(locale.guild_rolecount.replace("$roleCount", roles.cache.size)))
+                    env.server.roles.fetch()
+                        .then(roles => env.channel.send(env.serverLocale.guild_rolecount.replace("$roleCount", roles.cache.size)))
         
                 }
-                else if(Mention.isUserMention(args[2]))
+                else if(isUserMention(args[2]))
                 {
-                    guild.members.fetch(Mention.getUserID(args[2]))
-                        .then(member => channel.send(locale.member_rolecount.replace("$member", ping ? Mention.toUserMention(member.id) : TextDecorations.bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size)))
+                    env.server.members.fetch(getUserID(args[2]))
+                        .then(member => env.channel.send(env.serverLocale.member_rolecount.replace("$member", ping ? toUserMention(member.id) : bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size)))
                         .catch(console.error);
                 }
                 else
                 {
-                    guild.members.fetch()
+                    env.server.members.fetch()
                         .then(members => {
-                            console.log(guild);
                             const member = members.find(mem => mem.user.username === args[2] || mem.nickname === args[2]);
                             console.log(member.user.name);
-                            if(member === undefined)channel.send(locale.undefined_member.replace("$member", args[2]));
-                            else channel.send(locale.member_rolecount.replace("$member", ping ? Mention.toUserMention(member.id) : TextDecorations.bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size));
+                            if(member === undefined)env.channel.send(env.serverLocale.undefined_member.replace("$member", args[2]));
+                            else env.channel.send(env.serverLocale.member_rolecount.replace("$member", ping ? toUserMention(member.id) : bold(member.nickname === null ? member.user.username : member.nickname)).replace("$roleCount", member.roles.cache.size));
                         })
                         .catch(console.error);
                 }

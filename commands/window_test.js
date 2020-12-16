@@ -1,8 +1,10 @@
 const { execEnv } = require("../modules/scripting");
+const { windowedText } = require("../modules/textDecorations");
 
 module.exports = {
-    name: 'emoji',
-    description: 'emoji commands',
+    name: 'window_test',
+    description: 'create a window with text',
+
     /**
      * 
      * @param {execEnv} env
@@ -11,6 +13,6 @@ module.exports = {
      */
     async execute(connection, env, args)
     {
-        
+        env.channel.send(windowedText("*", "_", "|", 2, 2, "left", args[1]));
     }
 }
