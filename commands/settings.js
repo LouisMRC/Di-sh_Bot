@@ -7,6 +7,7 @@ GuildConf = require("../modules/serverConfig");
 module.exports = {
     name: 'settings',
     description: 'bot settings',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {import("mariadb").PoolConnection} connection 

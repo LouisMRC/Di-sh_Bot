@@ -3,6 +3,7 @@ const { execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'say',
     description: 'say something as the robot',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

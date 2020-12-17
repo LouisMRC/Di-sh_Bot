@@ -3,6 +3,7 @@ const { execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'emoji',
     description: 'emoji commands',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

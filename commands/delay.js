@@ -3,6 +3,7 @@ const { sleep, execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'delay',
     description: 'a simple delay',
+    allowedContexts: ["script"],
     /**
      * 
      * @param {execEnv} env

@@ -3,6 +3,7 @@ const { execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'time',
     description: 'juste in time',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

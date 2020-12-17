@@ -3,6 +3,7 @@ const { splitCommand, execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'command_split',
     description: 'just to test the spliter',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

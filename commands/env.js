@@ -4,6 +4,7 @@ const { execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'env',
     description: 'env variables',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

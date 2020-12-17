@@ -3,6 +3,7 @@ const { execEnv, scriptEditor } = require("../modules/scripting");
 module.exports = {
     name: 'collector_test',
     description: 'test the script editor',
+    allowedContexts: ["user"],
     /**
      * 
      * @param {import("mariadb").PoolConnection} connection 

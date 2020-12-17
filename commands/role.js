@@ -5,6 +5,7 @@ const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'role',
     description: 'some usefull commands to manipulate roles',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

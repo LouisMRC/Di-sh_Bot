@@ -6,6 +6,7 @@ const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'script',
     description: 'command scripts',
+    allowedContexts: ["user", "script"],
     /**
      * 
     * @param {import("mariadb").PoolConnection} connection 
@@ -25,7 +26,7 @@ module.exports = {
                         break;
                     }
                     await scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.script_input_start.replace("$scriptName", args[2]).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.script_input_finish.replace("$scriptName", args[2]), env.serverLocale.script_input_timeout, 120_000)
-                    .then(async (commands) => await connection.query("INSERT INTO Scripts (ServerID, ScriptName, script) VALUES (?, ?, ?);", [env.server.id, args[2].toLowerCase(), JSON.stringify(commands)]))
+                    .then(async (commands) => )
                     .catch(err => {if(err === "abort")env.channel.send("Abort!!")});
                 }
                 if(args.length >= 4)
@@ -43,9 +44,12 @@ module.exports = {
             case "edit":
                 break;
             case "editor":
-                await scriptEditor(client, connection, env, "Script Editor:", "finished", "timeout", 120_000)
-                    .then()
-                    .catch();
+                await env.channel.send("Script Editor:")
+                    .then(async () => {
+                        await scriptEditor(client, connection, env, 120_000)
+                        .then(async () => await env.channel.send("finished"))
+                        .catch(async () => await env.channel.send("timeout"));
+                    })
                 break;
             case "list":
                 const scripts = await connection.query("SELECT ScriptName, Script FROM Scripts WHERE ServerID=?;", [env.server.id]);

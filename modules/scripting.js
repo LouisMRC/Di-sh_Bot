@@ -14,7 +14,9 @@ class execEnv
      * @param {Guild} server 
      * @param {ServerConfig} serverConfig 
      * @param serverLocale 
+     * @param {TextChannel} channel
      * @param {User} user 
+     * @param {string} context 
      */
     constructor(server, serverConfig, serverLocale, channel, user, context)
     {
@@ -24,6 +26,10 @@ class execEnv
         this.m_CurrentChannel = channel;
         this.m_User = user;
         this.m_Context = context;
+    }
+    copy()
+    {
+        return new execEnv(this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context);
     }
     get server()
     {
@@ -132,16 +138,17 @@ function scriptCreator(channel, member, conf, startMessage, finishMessage, timeo
  * @param {number} idleTimeout
  */
 
-function scriptEditor(client, connection, env, startMessage, finishMessage, timeoutMessage, idleTimeout)
+function scriptEditor(client, connection, env, idleTimeout)
 {
     return new Promise((resolve, reject) => {
-        const filter = msg => msg.author.id === env.user.id;
+        const collectorEnabled = true;
+        const filter = msg => msg.author.id === env.user.id && collectorEnabled;
         env.channel.send(startMessage);
         const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
 
         collector.on("collect", message => {
             if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))collector.stop("save");
-            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}cancel`))collector.stop("abort");
+            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}quit`))collector.stop("quit");
             else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
         })
 
@@ -153,12 +160,12 @@ function scriptEditor(client, connection, env, startMessage, finishMessage, time
                     reject(reason);
                     break;
                 case "idle":
-                    await channel.send(timeoutMessage);
+                    await env.channel.send(timeoutMessage);
                     reject(reason);
                     break;
                 case "save":
-                    await channel.send(finishMessage);
-                    resolve(messageFilter(conf.getPrefix(), collected.array(), false));
+                    await env.channel.send(finishMessage);
+                    resolve(messageFilter(env.serverConfig.getPrefix(), collected.array(), false));
                     break;
                 default:
                     reject(reason);
@@ -167,22 +174,36 @@ function scriptEditor(client, connection, env, startMessage, finishMessage, time
         });
     })
 }
-
 /**
  * 
- * @param {Textchannel} channel 
- * @param {User} member 
- * @param {serverconfig} conf 
+ * @param {import("mariadb").PoolConnection} connection 
+ * @param {execEnv} env 
+ * @param {string} scriptName 
+ * @param {Array<string>} script 
+ */
+async function saveScript(connection, env, scriptName, script)
+{
+    if((await connection.query("SELECT ScriptName FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, scriptName])).length)
+    {
+        //if()
+        //todo: save script function
+    }
+    else
+    await connection.query("INSERT INTO Scripts (ServerID, ScriptName, script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
+}
+/**
+ * 
+ * @param {execEnv} env
  * @param {string} text 
  * @param {number} timeout 
  * @param {string} defaultAnswer 
  */
-async function promptYesNo(channel, member, conf, text, timeout, defaultAnswer="no")
+async function promptYesNo(env, text, timeout, defaultAnswer="no")
 {
-    channel.send(text + (defaultAnswer === "yes" ? " [Y/n]" : " [y/N]"));
+    env.channel.send(text + (defaultAnswer === "yes" ? " [Y/n]" : " [y/N]"));
     const answer = new Promise((resolve, reject) => {
-        const filter = msg => msg.author.id === member.id && ["y", "yes", "n", "no"].includes(msg.content.toLowerCase());
-        const collector = channel.createMessageCollector(filter, {max: 1, time: timeout});
+        const filter = msg => msg.author.id === env.user.id && ["y", "yes", "n", "no"].includes(msg.content.toLowerCase());
+        const collector = env.channel.createMessageCollector(filter, {max: 1, time: timeout});
 
         collector.on("end", async (collected, reason) => {
             if(reason === "limit")resolve(collected.array()[0].content.toLowerCase());
@@ -289,13 +310,18 @@ async function commandExe(client, connection, env, args)
     const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
     const comOutput = args[args.length -1] !== "noOutput";
 
-    if(client.commands.has(args[0].toLowerCase()))await client.commands.get(args[0].toLowerCase()).execute(client, connection, env, args);
+    if(client.commands.has(args[0].toLowerCase()))
+    {
+        const command = client.commands.get(args[0].toLowerCase());
+        if(command.allowedContexts.includes(env.context))env = await command.execute(client, connection, env, args);
+        else env.channel.send("ENV Error!!!");//hardcoded
+    }
     else
     {
-        env = await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
+        await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
         .then(async row => {
             if(row.length)
-                await interpretScript(client, connection, env, row[0].Script);//todo isolate user/script env              
+                await interpretScript(client, connection, env.copy(), row[0].Script);//todo isolate user/script env              
         })
         .catch(console.error);
     }

@@ -7,6 +7,7 @@ const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'role-group',
     description: 'role-group commands',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {import("mariadb").PoolConnection} connection 
@@ -30,7 +31,7 @@ module.exports = {
                 let overwrite = false;
                 if(row.length)
                 {
-                    if(!(await promptYesNo(env.channel, env.user, env.serverConfig, env.serverLocale.default_overwrite_question, 10000)))return;
+                    if(!(await promptYesNo(env, env.serverLocale.default_overwrite_question, 10000)))return;
                     env.channel.send(env.serverLocale.default_overwrite_message);
                     overwrite = true;
                 }

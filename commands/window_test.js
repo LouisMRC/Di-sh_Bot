@@ -4,6 +4,7 @@ const { windowedText } = require("../modules/textDecorations");
 module.exports = {
     name: 'window_test',
     description: 'create a window with text',
+    allowedContexts: ["user", "script"],
 
     /**
      * 

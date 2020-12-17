@@ -4,6 +4,7 @@ const { execEnv } = require("../modules/scripting");
 module.exports = {
     name: 'role_exist',
     description: 'check if a role exist',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env

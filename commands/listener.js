@@ -1,12 +1,12 @@
-const { Message, Client, Guild, TextChannel, User } = require("discord.js");
-const {enableReact, singleEmojiRequest} = require("../modules/listener");
+const { Client } = require("discord.js");
+const { enableReact, singleEmojiRequest } = require("../modules/listener");
 const { toEmojiMention } = require("../modules/mention");
 const { scriptCreator, execEnv } = require("../modules/scripting");
-const ServerConfig = require("../modules/serverConfig");
 
 module.exports = {
     name: 'listener',
     description: '',
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {Client} client 
