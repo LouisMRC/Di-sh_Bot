@@ -183,13 +183,12 @@ function scriptEditor(client, connection, env, idleTimeout)
  */
 async function saveScript(connection, env, scriptName, script)
 {
-    if((await connection.query("SELECT ScriptName FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, scriptName])).length)
+    if((await connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
     {
         //if()
         //todo: save script function
     }
-    else
-    await connection.query("INSERT INTO Scripts (ServerID, ScriptName, script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
+    else await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
 }
 /**
  * 
@@ -318,7 +317,7 @@ async function commandExe(client, connection, env, args)
     }
     else
     {
-        await connection.query("SELECT Script FROM Scripts WHERE ServerID=? AND ScriptName=?;", [env.server.id, args[0].toLowerCase()])
+        await connection.query("SELECT Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[0].toLowerCase()])
         .then(async row => {
             if(row.length)
                 await interpretScript(client, connection, env.copy(), row[0].Script);//todo isolate user/script env              

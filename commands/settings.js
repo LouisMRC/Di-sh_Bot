@@ -30,7 +30,7 @@ module.exports = {
                             env.channel.send(env.serverLocale.settings_general_error_no_prefix);
                             break;
                         }
-                        connection.query("UPDATE Servers SET CommandPrefix=? WHERE ServerID=?", [args[3], env.server.id])
+                        connection.query("UPDATE servers SET Command_prefix=? WHERE Server_ID=?", [args[3], env.server.id])
                         conf.setPrefix(args[3]);
                         channel.send(env.serverLocale.settings_update.replace("$setting", "prefix").replace("$value", env.serverConfig.getPrefix()))
                         break;
@@ -44,7 +44,7 @@ module.exports = {
                         else env.channel.send(env.serverLocale.settings_update.replace("$setting", "language").replace("$value", env.serverConfig.getLanguage()))
                         break;
                     case "auto-noping":
-                        connection.query("UPDATE Servers SET AutoNOPING=? WHERE ServerID=?", [!env.serverConfig.isAutoNOPING(), env.server.id])
+                        connection.query("UPDATE servers SET Auto_NOPING=? WHERE Server_ID=?", [!env.serverConfig.isAutoNOPING(), env.server.id])
                         env.serverConfig.setAutoNOPING(!env.serverConfig.isAutoNOPING());
                         env.channel.send(env.serverLocale.settings_update.replace("$setting", "auto-noping").replace("$value", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")))
                         break;
@@ -73,7 +73,7 @@ function setLang(connection, guild, conf, newLang)
     }
     if(lang !== null)
     {
-        connection.query("UPDATE Servers SET Language='" + lang + "' WHERE ServerID=" + guild.id)
+        connection.query("UPDATE servers SET Language='" + lang + "' WHERE Server_ID=" + guild.id)
         conf.setLanguage(lang);
         return;
     }

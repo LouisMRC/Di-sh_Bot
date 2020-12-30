@@ -21,13 +21,13 @@ module.exports = {
         {
             case "bind":
                 var ids = args[2].split("/").slice(-3);
-                if(!(await connection.query(`SELECT * FROM ReactionListeners WHERE ServerID=? AND ChannelID=? AND MessageID=?`, [ids[0], ids[1], ids[2]])).length)
+                if(!(await connection.query(`SELECT * FROM reaction_listeners WHERE Server_ID=? AND Channel_ID=? AND Message_ID=?`, [ids[0], ids[1], ids[2]])).length)
                 {
                     //hardcoded
                     break;
                 }
                 var message = await (await (await client.guilds.fetch(ids[0])).channels.cache.get(ids[1])).messages.fetch(ids[2]);
-                connection.query("SELECT * FROM ReactionListeners WHERE ServerID=? AND ChannelID=? AND MessageID=?", [ids[0], ids[1], ids[2]])
+                connection.query("SELECT * FROM reaction_listeners WHERE Server_ID=? AND Channel_ID=? AND Message_ID=?", [ids[0], ids[1], ids[2]])
                 .then(rows => {
                     let commands = JSON.parse(rows[0].Commands);
                     channel.send(env.serverLocale.prompt_emoji_reaction_listener)
@@ -39,7 +39,7 @@ module.exports = {
                             scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.type_script_start_reaction_listener.replace("$emoji", emoji).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.type_script_finish_reaction_listener.replace("$emoji", emoji), env.serverLocale.timeout_reaction_listener, 60_000)
                             .then(script => {
                                 commands.push([emoji, script]);
-                                connection.query("UPDATE ReactionListeners SET Commands=? WHERE ListenerID=?;", [JSON.stringify(commands), rows[0].ListenerID])
+                                connection.query("UPDATE reaction_risteners SET Commands=? WHERE Listener_ID=?;", [JSON.stringify(commands), rows[0].ListenerID])
                                 .then(() => {
                                     env.channel.send(env.serverLocale.succes_reaction_listener.replace("$emoji", emoji))
                                     .then(() => message.react(emoji)
@@ -65,11 +65,11 @@ module.exports = {
                 {
                     case "react":
                         ids = args[3].split("/").slice(-3);
-                        if((await connection.query(`SELECT * FROM ReactionListeners WHERE ServerID=? AND ChannelID=? AND MessageID=?`, [ids[0], ids[1], ids[2]])).length)
+                        if((await connection.query(`SELECT * FROM reaction_listeners WHERE Server_ID=? AND Channel_ID=? AND Message_ID=?`, [ids[0], ids[1], ids[2]])).length)
                         {
                             break;
                         }
-                        await connection.query("INSERT INTO ReactionListeners (ServerID, ChannelID, MessageID) VALUES(?, ?, ?);", [ids[0], ids[1], ids[2]]);
+                        await connection.query("INSERT INTO reaction_risteners (Server_ID, Channel_ID, Message_ID) VALUES(?, ?, ?);", [ids[0], ids[1], ids[2]]);
                         env.channel.send(env.serverLocale.reaction_listener_enabled);
                         break;
                 }
@@ -77,7 +77,7 @@ module.exports = {
             case "enable":
                 var ids = args[2].split("/").slice(-3);
                 var message = await (await (await client.guilds.fetch(ids[0])).channels.cache.get(ids[1])).messages.fetch(ids[2]);
-                await connection.query("SELECT Commands FROM ReactionListeners WHERE ServerID=? AND ChannelID=? AND MessageID=?", [ids[0], ids[1], ids[2]])
+                await connection.query("SELECT Commands FROM reaction_listeners WHERE Server_ID=? AND Channel_ID=? AND Message_ID=?", [ids[0], ids[1], ids[2]])
                 .then(rows => enableReact(client, connection, env.server, env.serverConfig, message, JSON.parse(rows[0].Commands)).then(() => env.channel.send("This Listener Is Now Enabled!")));//hardcoded
                 break;
             case "show":

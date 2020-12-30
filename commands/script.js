@@ -20,23 +20,23 @@ module.exports = {
             case "create":
                 if(args.length === 3)
                 {
-                    if((await connection.query(`SELECT * FROM Scripts WHERE ServerID=? AND ScriptName=?`, [env.server.id, args[2]])).length)
+                    if((await connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
                     {
                         // env.channel.send(env.serverLocale.)
                         break;
                     }
                     await scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.script_input_start.replace("$scriptName", args[2]).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.script_input_finish.replace("$scriptName", args[2]), env.serverLocale.script_input_timeout, 120_000)
-                    .then(async (commands) => )
+                    .then(async (script) => await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]))
                     .catch(err => {if(err === "abort")env.channel.send("Abort!!")});
                 }
                 if(args.length >= 4)
                 {
-                    if((await connection.query(`SELECT * FROM Scripts WHERE ServerID=? AND ScriptName=?`, [env.server.id, args[2]])).length)
+                    if((await connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
                     {
                         //hardcoded
                         break;
                     }
-                    await connection.query(`INSERT INTO Scripts (ServerID, ScriptName, Scripts) VALUES (?, ?, ?);`, [env.server.id, args[2].toLowerCase(), args[3]]);
+                    await connection.query(`INSERT INTO scripts (Server_ID, Script_name, Scripts) VALUES (?, ?, ?);`, [env.server.id, args[2].toLowerCase(), args[3]]);
                 }
                 break;
             case "delete":
@@ -52,7 +52,7 @@ module.exports = {
                     })
                 break;
             case "list":
-                const scripts = await connection.query("SELECT ScriptName, Script FROM Scripts WHERE ServerID=?;", [env.server.id]);
+                const scripts = await connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=?;", [env.server.id]);
                 var message = new MessageEmbed();
                 let list = "";
                 for(let i = 0; i < scripts.length; i++)list += (i ? "\n" : "") + env.serverLocale.script_list_item.replace("$scriptName", bold(scripts[i].ScriptName)).replace("$scriptSize", scripts[i].Script.length);
@@ -61,7 +61,7 @@ module.exports = {
                 env.channel.send(message);
                 break;
             case "show":
-                const script = await connection.query(`SELECT ScriptName, Script FROM Scripts WHERE ServerID=? AND ScriptName=?;`, [env.server.id, args[2]]);
+                const script = await connection.query(`SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;`, [env.server.id, args[2]]);
                 var message = bold(`${script[0].ScriptName}:`);
                 message += displayScript(script[0].Script)
                 env.channel.send(message);

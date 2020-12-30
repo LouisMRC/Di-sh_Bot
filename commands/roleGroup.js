@@ -27,7 +27,7 @@ module.exports = {
                         env.channel.send(env.serverLocale.default_bad_input_message);
                         return;
                     }
-                const row = await connection.query("SELECT Roles FROM RoleGroups WHERE ServerID=? AND GroupName=?;", [env.server.id, args[2]]);
+                const row = await connection.query("SELECT Roles FROM role_groups WHERE Server_ID=? AND GroupName=?;", [env.server.id, args[2]]);
                 let overwrite = false;
                 if(row.length)
                 {
@@ -35,8 +35,8 @@ module.exports = {
                     env.channel.send(env.serverLocale.default_overwrite_message);
                     overwrite = true;
                 }
-                if(overwrite)await connection.query("UPDATE RoleGroups SET Roles = ? WHERE ServerID=? AND GroupName=?;", [JSON.stringify(roles), env.server.id, args[2]]);
-                else await connection.query("INSERT INTO RoleGroups (ServerID, GroupName, Roles) VALUES (?, ?, ?);", [env.server.id, args[2], JSON.stringify(roles)]);
+                if(overwrite)await connection.query("UPDATE role_groups SET Roles = ? WHERE Server_ID=? AND Group_name=?;", [JSON.stringify(roles), env.server.id, args[2]]);
+                else await connection.query("INSERT INTO role_groups (Server_ID, Group_name, Roles) VALUES (?, ?, ?);", [env.server.id, args[2], JSON.stringify(roles)]);
                 break;
             case "delete":
                 break;
@@ -47,7 +47,7 @@ module.exports = {
             case "remove":
                 break;
             case "list":
-                const groups = await connection.query("SELECT GroupName, Roles FROM RoleGroups WHERE ServerID=?;", [env.server.id]);
+                const groups = await connection.query("SELECT Group_name, Roles FROM role_groups WHERE Server_ID=?;", [env.server.id]);
                 let message = new MessageEmbed();
                 let list = "";
                 for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, env.server)) ? "🟢" : "⚠️"} -${bold(groups[i].GroupName)} - ${groups[i].Roles.length}`
