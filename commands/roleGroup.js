@@ -50,7 +50,7 @@ module.exports = {
                 const groups = await connection.query("SELECT Group_name, Roles FROM role_groups WHERE Server_ID=?;", [env.server.id]);
                 let message = new MessageEmbed();
                 let list = "";
-                for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, env.server)) ? "🟢" : "⚠️"} -${bold(groups[i].GroupName)} - ${groups[i].Roles.length}`
+                for(let i = 0; i < groups.length; i++)list += `${i ? "\n" : ""}${(await checkRoles(groups[i].Roles, env.server)) ? "🟢" : "⚠️"} -${bold(groups[i].Group_name)} - ${groups[i].Roles.length}`
                 message.addField(bold(env.serverLocale.role_group_list_title), list+env.serverLocale.role_group_list_missing_role_warning)
                 .setColor("BLUE");
                 env.channel.send(message);

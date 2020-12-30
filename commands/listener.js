@@ -39,7 +39,7 @@ module.exports = {
                             scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.type_script_start_reaction_listener.replace("$emoji", emoji).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.type_script_finish_reaction_listener.replace("$emoji", emoji), env.serverLocale.timeout_reaction_listener, 60_000)
                             .then(script => {
                                 commands.push([emoji, script]);
-                                connection.query("UPDATE reaction_risteners SET Commands=? WHERE Listener_ID=?;", [JSON.stringify(commands), rows[0].ListenerID])
+                                connection.query("UPDATE reaction_risteners SET Commands=? WHERE Listener_ID=?;", [JSON.stringify(commands), rows[0].Listener_ID])
                                 .then(() => {
                                     env.channel.send(env.serverLocale.succes_reaction_listener.replace("$emoji", emoji))
                                     .then(() => message.react(emoji)

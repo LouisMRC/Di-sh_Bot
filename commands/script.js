@@ -55,14 +55,14 @@ module.exports = {
                 const scripts = await connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=?;", [env.server.id]);
                 var message = new MessageEmbed();
                 let list = "";
-                for(let i = 0; i < scripts.length; i++)list += (i ? "\n" : "") + env.serverLocale.script_list_item.replace("$scriptName", bold(scripts[i].ScriptName)).replace("$scriptSize", scripts[i].Script.length);
+                for(let i = 0; i < scripts.length; i++)list += (i ? "\n" : "") + env.serverLocale.script_list_item.replace("$scriptName", bold(scripts[i].Script_name)).replace("$scriptSize", scripts[i].Script.length);
                 message.addField(bold(env.serverLocale.script_show_title), list)
                 .setColor("BLUE");
                 env.channel.send(message);
                 break;
             case "show":
                 const script = await connection.query(`SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;`, [env.server.id, args[2]]);
-                var message = bold(`${script[0].ScriptName}:`);
+                var message = bold(`${script[0].Script_name}:`);
                 message += displayScript(script[0].Script)
                 env.channel.send(message);
                 break;

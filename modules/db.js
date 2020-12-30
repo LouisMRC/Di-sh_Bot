@@ -5,7 +5,7 @@ async function getServer(connection, serverID, verify = false)
     let config = null;
     await connection.query("SELECT * FROM servers WHERE Server_ID=?;", [serverID])
         .then(async (rows) => {
-            if(rows.length)config = new ServerConf(rows[0].CommandPrefix, rows[0].Language, rows[0].AutoNOPING);
+            if(rows.length)config = new ServerConf(rows[0].Command_prefix, rows[0].Language, rows[0].Auto_NOPING);
             else if(!rows.length && verify)
             {
                 await dbAddServer(connection, serverID);

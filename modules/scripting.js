@@ -320,7 +320,7 @@ async function commandExe(client, connection, env, args)
         await connection.query("SELECT Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[0].toLowerCase()])
         .then(async row => {
             if(row.length)
-                await interpretScript(client, connection, env.copy(), row[0].Script);//todo isolate user/script env              
+                await interpretScript(client, connection, env.copy(), row[0].Script);             
         })
         .catch(console.error);
     }
