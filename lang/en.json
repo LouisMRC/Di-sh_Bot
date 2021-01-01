@@ -22,11 +22,17 @@
     "help_message": "",
 
 
-    "script_input_start": "Script For $scriptName:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
+    "script_editor_title": "Editing $scriptName:",
 
-    "script_input_timeout": "Timeout!!!",
+    "script_editor_console_title": "Console:",
 
-    "script_input_finish": "Saved As **$scriptName**\nyou can now use it as a normal command",
+    "script_editor_commands": "**-`$prefixexe`** - Execute the script\n**-`$prefixsave`** - Save the script\n**-`$prefixquit`** - Close the editor",
+
+    "script_editor_footer": "(prefixed commands will be ignored and executed as regular commands)",
+
+    "script_editor_timeout": "Timeout!!!",
+
+    "script_editor_finish": "Saved As **$scriptName**\nTry it!!(**`$prefix$scriptName`**)",
 
     "script_list_item": "-$scriptName - $scriptSize lines",
 

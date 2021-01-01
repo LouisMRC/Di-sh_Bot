@@ -21,11 +21,20 @@
     
     "help_message": "",
 
-    "script_input_start": "Definition de $scriptName:\n(Attention, toute commande prefixé serons ignoré et executé normalement)\nUne fois terminé, noubliez pas de sauvegarder votre script(**`$prefixsave`**)\nSinon vous pouvez simplement annuler la saisie(**`$prefixcancel`**)||pratique quand on change d'avis :wink:||",
 
-    "script_input_timeout": "Delais dépasé!!!",
 
-    "script_input_finish": "Script enregistré dans: **$scriptName**\nVous pouvez désormais l'executer dans ce serveur",
+
+    "script_editor_title": "Modification de $scriptName:",
+
+    "script_editor_console_title": "Console:",
+
+    "script_editor_commands": "**-`$prefixexe`** - Execute le script\n**-`$prefixsave`** - Sauvegarde le script\n**-`$prefixquit`** - Ferme l'éditeur",
+
+    "script_editor_footer": "(Attention, toute commande prefixé serons ignoré et executé normalement)",
+
+    "script_editor_timeout": "Delais dépasé!!!",
+
+    "script_editor_finish": "Script enregistré dans: **$scriptName**\nEssayez le donc!!(**`$prefix$scriptName`**)",
 
     "script_list_item": "-$scriptName - $scriptSize lignes",
 

@@ -1,8 +1,10 @@
-const { TextChannel, Collection, Client, Guild, User, Message } = require("discord.js");
+const { TextChannel, Collection, Client, Guild, User, Message, MessageEmbed } = require("discord.js");
 const {languages, loadLanguages} = require("./lang");
 const {removeQuote} = require("./textTransformations");
+const { digitOnly } = require("./string");
 const ServerConfig = require("./serverConfig");
-const { windowedText } = require("./textDecorations");
+const { windowedText, multiline_codeblock } = require("./textDecorations");
+const { OutputHandler } = require("./commandOutput");
 const { roleExist } = require("./mention");
 const { getServer } = require("./db");
 
@@ -18,7 +20,7 @@ class execEnv
      * @param {User} user 
      * @param {string} context 
      */
-    constructor(server, serverConfig, serverLocale, channel, user, context)
+    constructor(server, serverConfig, serverLocale, channel, user, context, outputType, outputTarget)
     {
         this.m_Server = server;
         this.m_ServerConfig = serverConfig;
@@ -26,10 +28,20 @@ class execEnv
         this.m_CurrentChannel = channel;
         this.m_User = user;
         this.m_Context = context;
+        this.m_PreviousOutput = null;
+        // this.m_Output = new OutputHandler
     }
     copy()
     {
         return new execEnv(this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context);
+    }
+    return(value)
+    {
+        this.m_PreviousOutput = value;
+    }
+    get previousOuput()
+    {
+        return this.m_PreviousOutput;
     }
     get server()
     {
@@ -80,6 +92,31 @@ class execEnv
         this.m_Context = context;
     }
 }
+/**
+ * 
+ * @param {Array<string>} script 
+ * @param {boolean} withCursor 
+ * @param {boolean} insert 
+ * @param {number} cursorPos 
+ */
+function displayScript(script, withCursor, insert, cursorPos = 0)
+{
+    let editorDisplay = (!script.length || (cursorPos === -1 && withCursor) ? "└>" : "") + (cursorPos === -1 && withCursor ? " \n" : "");
+    for(let i = 0; i < script.length; i++)editorDisplay += `${i ? "\n" : ""}${i+1}  ${withCursor && !insert && i === cursorPos ? ">>> " : ""}${script[i]}${withCursor && insert && i === cursorPos ? "\n└> " : ""}`;
+    return multiline_codeblock(editorDisplay);
+}
+
+/**
+ * 
+ * @param {string} content 
+ */
+function createDisplay(scriptName, content, env)
+{
+    return new MessageEmbed()
+                .setColor("BLUE")
+                .setTitle()
+                .addField(`${scriptName}:`, content);
+}
 
 /**
  * 
@@ -95,35 +132,84 @@ class execEnv
 function scriptCreator(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
 {
     return new Promise((resolve, reject) => {
+        let script = [];
+        let cursorPos = 0;
+        let insert = true;
         const filter = msg => msg.author.id === member.id;
-        channel.send(startMessage);
-        const collector = channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
+        channel.send(createDisplay(displayScript(script, true, true)))
+            .then(display => {
+                //channel.send(startMessage);
+                const collector = channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
 
-        collector.on("collect", message => {
-            if(message.content.startsWith(`${conf.getPrefix()}save`))collector.stop("save");
-            else if(message.content.startsWith(`${conf.getPrefix()}cancel`))collector.stop("abort");
-        })
+                collector.on("collect", message => {
+                    if(message.content.startsWith(`${conf.getPrefix()}save`))collector.stop("save");
+                    else if(message.content.startsWith(`${conf.getPrefix()}cancel`))collector.stop("abort");
+                    else if(!startWithPrefix(conf.getPrefix(), message.content))
+                    {
+                        if(digitOnly(message.content.split(" ")[0]))
+                        {
+                            var newPos = parseInt(message.content.split(" ")[0]);
+                            cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
+                            insert = false;
+                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                            message.delete();
+                        }
+                        else if(message.content.split(" ")[0].startsWith("*") && digitOnly(message.content.split(" ")[0].slice(1)))
+                        {
+                            var newPos = parseInt(message.content.split(" ")[0].slice(1));
+                            cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
+                            insert = true
+                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                            message.delete();
+                        }
+                        else
+                        {
+                            if(cursorPos === -1)
+                            {
+                                script.unshift(message.content);
+                                insert = true;
+                                cursorPos++;
+                            }
+                            else if(insert)
+                            {
+                                if(cursorPos < script.length)script.splice(cursorPos + 1, 0, message.content);
+                                else script.push(message.content);
+                                cursorPos++;
+                            }
+                            else
+                            {
+                                script[cursorPos] = message.content;
+                                insert = true;
+                                cursorPos = script.length;
+                            }
+                            message.delete();
+                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                        }
+                    }
+                })
 
-        collector.on("end", async (collected, reason) => {
+                collector.on("end", async (collected, reason) => {
 
-            switch(reason)
-            {
-                case "abort":
-                    reject(reason);
-                    break;
-                case "idle":
-                    await channel.send(timeoutMessage);
-                    reject(reason);
-                    break;
-                case "save":
-                    await channel.send(finishMessage);
-                    resolve(messageFilter(conf.getPrefix(), collected.array(), false));
-                    break;
-                default:
-                    reject(reason);
-                    break;
-            }
-        });
+                    switch(reason)
+                    {
+                        case "abort":
+                            reject(reason);
+                            break;
+                        case "idle":
+                            await channel.send(timeoutMessage);
+                            reject(reason);
+                            break;
+                        case "save":
+                            await channel.send(finishMessage);
+                            resolve(script);
+                            break;
+                        default:
+                            reject(reason);
+                            break;
+                    }
+                });
+            })
+        
     })
 }
 
@@ -132,13 +218,11 @@ function scriptCreator(channel, member, conf, startMessage, finishMessage, timeo
  * @param {Client} client
  * @param {import("mariadb").PoolConnection} connection
  * @param {execEnv} env
- * @param {string} startMessage
- * @param {string} finishMessage
- * @param {string} timeoutMessage
  * @param {number} idleTimeout
+ * @param {boolean} overwrite
  */
 
-function scriptEditor(client, connection, env, idleTimeout)
+function scriptEditor(client, connection, env, idleTimeout, overwrite)
 {
     return new Promise((resolve, reject) => {
         const collectorEnabled = true;
@@ -147,7 +231,7 @@ function scriptEditor(client, connection, env, idleTimeout)
         const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
 
         collector.on("collect", message => {
-            if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))collector.stop("save");
+            if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))collector.stop("close");
             else if(message.content.startsWith(`${env.serverConfig.getPrefix()}quit`))collector.stop("quit");
             else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
         })
@@ -156,7 +240,7 @@ function scriptEditor(client, connection, env, idleTimeout)
 
             switch(reason)
             {
-                case "abort":
+                case "close":
                     reject(reason);
                     break;
                 case "idle":
@@ -273,9 +357,12 @@ function sleep(ms)
 async function interpretUserInput(client, connection, message)
 {
     const conf = await getServer(connection, message.guild.id, true);
+    let previousOuput = null;
     for(let line of commandFilter(conf.getPrefix(), message.content.split("\n"), true))
     {
-        await commandExe(client, connection, new execEnv(message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user"), splitCommand(line.slice(conf.getPrefix().length)));
+        let env = new execEnv(message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user");
+        env.return(previousOuput);
+        previousOuput = (await commandExe(client, connection, env, pipe(splitCommand(line.slice(conf.getPrefix().length)), env))).previousOuput;
     }
 }
 
@@ -293,7 +380,7 @@ async function interpretScript(client, connection, env, script)
     for(let instruction of script)
     {
         console.log(`Executing ${instruction} :`);
-        env = await commandExe(client, connection, env, splitCommand(instruction));
+        env = await commandExe(client, connection, env, pipe(splitCommand(instruction), env));
     }
 }
 
@@ -385,6 +472,22 @@ function splitCommand(command)
     if(argBuffer.length > 0)args.push(argBuffer);
     return args;
 }
+
+/**
+ * 
+ * @param {Array<string>} args 
+ * @param {execEnv} env 
+ */
+function pipe(args, env)
+{
+    let instruction = [];
+    for(let arg of args)
+    {
+        if(arg === "-")instruction.push(env.previousOuput);
+        else instruction.push(arg);
+    }
+    return instruction;
+}
 function openClose(char)
 {
     switch(char)
@@ -405,6 +508,7 @@ function openClose(char)
 module.exports = {
     execEnv,
 
+    displayScript,
     scriptCreator,
     scriptEditor,
     promptYesNo,

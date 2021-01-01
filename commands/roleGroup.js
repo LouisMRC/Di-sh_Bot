@@ -1,4 +1,4 @@
-const { Guild, TextChannel, MessageEmbed } = require("discord.js");
+const { Guild, TextChannel, MessageEmbed, Client } = require("discord.js");
 const { isRoleMention, roleExist, getRoleID } = require("../modules/mention");
 const ServerConfig = require("../modules/serverConfig");
 const {promptYesNo, execEnv} = require("../modules/scripting");
@@ -10,6 +10,7 @@ module.exports = {
     allowedContexts: ["user", "script"],
     /**
      * 
+     * @param {Client} client
      * @param {import("mariadb").PoolConnection} connection 
      * @param {execEnv} env
      * @param {Array<string>} args 

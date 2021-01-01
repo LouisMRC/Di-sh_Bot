@@ -1,5 +1,5 @@
 const { Channel, Guild, TextChannel, User, Message, MessageEmbed } = require("discord.js");
-const { scriptEditor, execEnv } = require("../modules/scripting");
+const { displayScript, scriptEditor, execEnv, scriptCreator } = require("../modules/scripting");
 const ServerConfig = require("../modules/serverConfig");
 const { bold } = require("../modules/textDecorations");
 
@@ -25,8 +25,8 @@ module.exports = {
                         // env.channel.send(env.serverLocale.)
                         break;
                     }
-                    await scriptCreator(env.channel, env.user, env.serverConfig, env.serverLocale.script_input_start.replace("$scriptName", args[2]).replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()), env.serverLocale.script_input_finish.replace("$scriptName", args[2]), env.serverLocale.script_input_timeout, 120_000)
-                    .then(async (script) => await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]))
+                    await scriptCreator(env.channel, env.user, env.serverConfig, "", env.serverLocale.script_editor_finish.replace("$scriptName", args[2]), env.serverLocale.script_editor_timeout, 120_000)
+                    .then(async (script) => await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, args[2].toLowerCase(), JSON.stringify(script)]))
                     .catch(err => {if(err === "abort")env.channel.send("Abort!!")});
                 }
                 if(args.length >= 4)
@@ -63,21 +63,10 @@ module.exports = {
             case "show":
                 const script = await connection.query(`SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;`, [env.server.id, args[2]]);
                 var message = bold(`${script[0].Script_name}:`);
-                message += displayScript(script[0].Script)
+                message += displayScript(script[0].Script, false, false)
                 env.channel.send(message);
                 break;
         }
         return env;
     }
-}
-/**
- * 
- * @param {Array<string>} script
- */
-function displayScript(script)
-{
-    let message = "\n```";
-    for(let i = 0; i < script.length; i++)message += `\n${i+1}  ${script[i]}`;
-    message += "\n```";
-    return message
 }
