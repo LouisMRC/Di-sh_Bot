@@ -18,38 +18,55 @@ module.exports = {
         switch(args[1])
         {
             case "create":
-                if(args.length === 3)
+                if((await connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
                 {
-                    if((await connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
-                    {
-                        // env.channel.send(env.serverLocale.)
-                        break;
-                    }
-                    await scriptCreator(env.channel, env.user, env.serverConfig, "", env.serverLocale.script_editor_finish.replace("$scriptName", args[2]), env.serverLocale.script_editor_timeout, 120_000)
-                    .then(async (script) => await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, args[2].toLowerCase(), JSON.stringify(script)]))
-                    .catch(err => {if(err === "abort")env.channel.send("Abort!!")});
+                    // hardcoded
+                    break;
                 }
-                if(args.length >= 4)
-                {
-                    if((await connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
-                    {
-                        //hardcoded
-                        break;
-                    }
-                    await connection.query(`INSERT INTO scripts (Server_ID, Script_name, Scripts) VALUES (?, ?, ?);`, [env.server.id, args[2].toLowerCase(), args[3]]);
-                }
+                await scriptEditor(client, connection, env, 120_000, {scriptName: args[2].toLowerCase(), script: []})
+                    .then(async () => await env.channel.send("finished"))
+                    .catch(async () => await env.channel.send("timeout"));
                 break;
             case "delete":
                 break;
             case "edit":
-                break;
-            case "editor":
-                await env.channel.send("Script Editor:")
-                    .then(async () => {
-                        await scriptEditor(client, connection, env, 120_000)
+                var script = await connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[2].toLowerCase()]);
+                if(script.length)
+                {
+                    await scriptEditor(client, connection, env, 120_000, {scriptName: script[0].Script_name, script: script[0].Script})
                         .then(async () => await env.channel.send("finished"))
                         .catch(async () => await env.channel.send("timeout"));
-                    })
+                }
+                else
+                {
+                    await scriptEditor(client, connection, env, 120_000, {scriptName: script[0].Script_name, script: []})
+                        .then(async () => await env.channel.send("finished"))
+                        .catch(async () => await env.channel.send("timeout"));
+                }
+                break;
+            case "editor":
+                if(args.length > 2)
+                {
+                    const script = await connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[2].toLowerCase()]);
+                    if(script.length)
+                    {
+                        await scriptEditor(client, connection, env, 120_000, {scriptName: script[0].Script_name, script: script[0].Script})
+                            .then(async () => await env.channel.send("finished"))
+                            .catch(async () => await env.channel.send("timeout"));
+                    }
+                    else
+                    {
+                        await scriptEditor(client, connection, env, 120_000, {scriptName: script[0].Script_name, script: []})
+                            .then(async () => await env.channel.send("finished"))
+                            .catch(async () => await env.channel.send("timeout"));
+                    }
+                }
+                else
+                {
+                    await scriptEditor(client, connection, env, 120_000)
+                        .then(async () => await env.channel.send("finished"))
+                        .catch(async () => await env.channel.send("timeout"));
+                }
                 break;
             case "list":
                 const scripts = await connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=?;", [env.server.id]);
@@ -61,7 +78,7 @@ module.exports = {
                 env.channel.send(message);
                 break;
             case "show":
-                const script = await connection.query(`SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;`, [env.server.id, args[2]]);
+                var script = await connection.query(`SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;`, [env.server.id, args[2]]);
                 var message = bold(`${script[0].Script_name}:`);
                 message += displayScript(script[0].Script, false, false)
                 env.channel.send(message);

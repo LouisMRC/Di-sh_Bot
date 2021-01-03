@@ -1,4 +1,4 @@
-const { toChannelMention } = require("../modules/mention");
+const { toChannelMention, toUserMention } = require("../modules/mention");
 const { execEnv } = require("../modules/scripting");
 
 module.exports = {
@@ -28,6 +28,9 @@ module.exports = {
                 {
                     case "channel":
                         env.channel.send(`ENV/CHANNEL: ${toChannelMention(env.channel.id)}`);
+                        break;
+                    case "user":
+                        env.channel.send(`ENV/USER: ${toUserMention(env.user.id)}`);
                         break;
                 }
                 break;

@@ -24,11 +24,19 @@
 
     "script_editor_title": "Editing $scriptName:",
 
+    "script_editor_title_new": "New Script",
+
+    "script_editor_save_indicator": "\nSaved [$isSaved]",
+
     "script_editor_console_title": "Console:",
 
     "script_editor_commands": "**-`$prefixexe`** - Execute the script\n**-`$prefixsave`** - Save the script\n**-`$prefixquit`** - Close the editor",
 
     "script_editor_footer": "(prefixed commands will be ignored and executed as regular commands)",
+
+    "script_editor_save_create_name": "Script name to write:",
+
+    "script_editor_save_overwrite_question": "**$scriptName** already exists, overwrite ?",
 
     "script_editor_timeout": "Timeout!!!",
 

@@ -21,7 +21,25 @@ async function dbAddServer(connection, serverID)
         .catch(console.error);
 }
 
+/**
+ * 
+ * @param {import("mariadb").PoolConnection} connection 
+ * @param {execEnv} env 
+ * @param {string} scriptName 
+ * @param {Array<string>} script 
+ */
+async function saveScript(connection, env, scriptName, script)
+{
+    if((await connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
+    {
+        await connection.query("UPDATE scripts SET Script=? Where Server_ID=? AND Script_name=?;", [JSON.stringify(script), env.server.id, scriptName]);
+    }
+    else await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
+}
+
 module.exports = {
     getServer,
-    dbAddServer
+    dbAddServer,
+
+    saveScript
 }

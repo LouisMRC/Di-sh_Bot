@@ -26,11 +26,19 @@
 
     "script_editor_title": "Modification de $scriptName:",
 
+    "script_editor_title_new": "Nouveau Script:",
+
+    "script_editor_save_indicator": "\nEnregistré [$isSaved]",
+
     "script_editor_console_title": "Console:",
 
     "script_editor_commands": "**-`$prefixexe`** - Execute le script\n**-`$prefixsave`** - Sauvegarde le script\n**-`$prefixquit`** - Ferme l'éditeur",
 
     "script_editor_footer": "(Attention, toute commande prefixé serons ignoré et executé normalement)",
+
+    "script_editor_save_create_name": "Nommez ce script:",
+
+    "script_editor_save_overwrite_question": "**$scriptName** existe déjà, voulez vous l'écraser ?",
 
     "script_editor_timeout": "Delais dépasé!!!",
 

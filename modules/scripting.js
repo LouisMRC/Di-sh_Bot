@@ -6,7 +6,7 @@ const ServerConfig = require("./serverConfig");
 const { windowedText, multiline_codeblock } = require("./textDecorations");
 const { OutputHandler } = require("./commandOutput");
 const { roleExist } = require("./mention");
-const { getServer } = require("./db");
+const { getServer, saveScript } = require("./db");
 
 
 class execEnv
@@ -108,50 +108,77 @@ function displayScript(script, withCursor, insert, cursorPos = 0)
 
 /**
  * 
+ * @param {string} scriptName
  * @param {string} content 
+ * @param {execEnv} env
  */
-function createDisplay(scriptName, content, env)
+function createDisplay(scriptName, content, env, saved)
 {
     return new MessageEmbed()
                 .setColor("BLUE")
-                .setTitle()
-                .addField(`${scriptName}:`, content);
+                .addField((scriptName === null ? env.serverLocale.script_editor_title_new : env.serverLocale.script_editor_title.replace("$scriptName", scriptName)), content + (saved === null ? "" : env.serverLocale.script_editor_save_indicator.replace("$isSaved", saved ? "█" : " ")));
 }
 
 /**
  * 
- * @param {TextChannel} channel 
- * @param {User} member
- * @param {ServerConfig} conf
- * @param {string} startMessage
- * @param {string} finishMessage
- * @param {string} timeoutMessage
+ * @param {Client} client
+ * @param {import("mariadb").PoolConnection} connection
+ * @param {execEnv} env
  * @param {number} idleTimeout
+ * @param {boolean} overwrite
  */
 
-function scriptCreator(channel, member, conf, startMessage, finishMessage, timeoutMessage, idleTimeout)
+function scriptEditor(client, connection, env, idleTimeout, scriptData = {scriptName: null, script: []})
 {
     return new Promise((resolve, reject) => {
-        let script = [];
+        let script = scriptData.script;
+        let scriptName = scriptData.scriptName;
         let cursorPos = 0;
         let insert = true;
-        const filter = msg => msg.author.id === member.id;
-        channel.send(createDisplay(displayScript(script, true, true)))
-            .then(display => {
-                //channel.send(startMessage);
-                const collector = channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
+        let saved = true;
 
-                collector.on("collect", message => {
-                    if(message.content.startsWith(`${conf.getPrefix()}save`))collector.stop("save");
-                    else if(message.content.startsWith(`${conf.getPrefix()}cancel`))collector.stop("abort");
-                    else if(!startWithPrefix(conf.getPrefix(), message.content))
+        env.channel.send(createDisplay(scriptName, displayScript(script, true, true), env, saved))
+            .then(editorWindow => {
+                let collectorEnabled = true;
+                const filter = msg => msg.author.id === env.user.id && collectorEnabled;
+                const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
+
+                collector.on("collect", async message => {
+                    if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))
+                    {
+                        console.log(scriptName);
+                        if(scriptName === null)
+                        {
+                            collectorEnabled = false;
+                            let newName;
+                            do
+                            {
+                                    await textInput(env, env.serverLocale.script_editor_save_create_name, 60_000, true)
+                                    .then(answer => newName = answer.toLowerCase())
+                                    .catch(err => {
+                                        collector.stop(`save: ${err}`);
+                                        return;
+                                    });
+                            }
+                            while((await connection.query("SELECT Script_ID FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, newName])).length && !(await promptYesNo(env, env.serverLocale.script_editor_save_overwrite_question.replace("$scriptName", newName), 12_000)));
+                            scriptName = newName;
+                            collectorEnabled = true;
+                        }
+                        await saveScript(connection, env, scriptName, script);
+                        saved = true;
+                        editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
+                        message.delete();
+                    }
+                    else if(message.content.startsWith(`${env.serverConfig.getPrefix()}quit`))collector.stop("close");
+                    else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
+                    else if(!startWithPrefix(env.serverConfig.getPrefix(), message.content))
                     {
                         if(digitOnly(message.content.split(" ")[0]))
                         {
                             var newPos = parseInt(message.content.split(" ")[0]);
                             cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
                             insert = false;
-                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
                             message.delete();
                         }
                         else if(message.content.split(" ")[0].startsWith("*") && digitOnly(message.content.split(" ")[0].slice(1)))
@@ -159,7 +186,7 @@ function scriptCreator(channel, member, conf, startMessage, finishMessage, timeo
                             var newPos = parseInt(message.content.split(" ")[0].slice(1));
                             cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
                             insert = true
-                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
                             message.delete();
                         }
                         else
@@ -183,96 +210,67 @@ function scriptCreator(channel, member, conf, startMessage, finishMessage, timeo
                                 cursorPos = script.length;
                             }
                             message.delete();
-                            display.edit(createDisplay(displayScript(script, true, insert, cursorPos)));
+                            saved = false;
+                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
                         }
                     }
                 })
-
+        
                 collector.on("end", async (collected, reason) => {
-
-                    switch(reason)
+                    if(reason === "close")
                     {
-                        case "abort":
-                            reject(reason);
-                            break;
-                        case "idle":
-                            await channel.send(timeoutMessage);
-                            reject(reason);
-                            break;
-                        case "save":
-                            await channel.send(finishMessage);
-                            resolve(script);
-                            break;
-                        default:
-                            reject(reason);
-                            break;
+                        resolve(reason);
+                    }
+                    else
+                    {
+                        reject(reason);
                     }
                 });
-            })
-        
+            });
     })
 }
 
+
+
 /**
  * 
- * @param {Client} client
- * @param {import("mariadb").PoolConnection} connection
- * @param {execEnv} env
- * @param {number} idleTimeout
- * @param {boolean} overwrite
+ * @param {execEnv} env 
+ * @param {string} msg 
  */
-
-function scriptEditor(client, connection, env, idleTimeout, overwrite)
+function textInput(env, msg, idleTimeout, allowRetry = false)
 {
     return new Promise((resolve, reject) => {
-        const collectorEnabled = true;
-        const filter = msg => msg.author.id === env.user.id && collectorEnabled;
-        env.channel.send(startMessage);
-        const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
-
-        collector.on("collect", message => {
-            if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))collector.stop("close");
-            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}quit`))collector.stop("quit");
-            else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
-        })
-
-        collector.on("end", async (collected, reason) => {
-
-            switch(reason)
-            {
-                case "close":
-                    reject(reason);
-                    break;
-                case "idle":
-                    await env.channel.send(timeoutMessage);
-                    reject(reason);
-                    break;
-                case "save":
-                    await env.channel.send(finishMessage);
-                    resolve(messageFilter(env.serverConfig.getPrefix(), collected.array(), false));
-                    break;
-                default:
-                    reject(reason);
-                    break;
-            }
-        });
+        const filter = message => message.author === env.user && !startWithPrefix(env.serverConfig.getPrefix(), message.content);
+        env.channel.send(msg)
+            .then(async instructMsg => {
+                const collector = env.channel.createMessageCollector(filter, {max: 1, time: idleTimeout});
+                collector.on("end", async(message, reason) => {
+                    instructMsg.delete();
+                    if(reason === "limit")
+                    {
+                        const answer = message.array()[0].content;
+                        message.delete();
+                        resolve(answer);
+                    }
+                    if(reason === "time")
+                    {
+                        if(allowRetry)
+                        {
+                            if(promptYesNo(env, "hardcoded", 30_000))
+                            {
+                                textInput(env, msg, idleTimeout, false)
+                                .then(answer => resolve(answer))
+                                .catch(() => reject("time"));
+                            }
+                            else reject("abort");
+                        }
+                        else reject(reason);
+                    }
+                    else reject(reason);
+                });
+            });
+        
     })
-}
-/**
- * 
- * @param {import("mariadb").PoolConnection} connection 
- * @param {execEnv} env 
- * @param {string} scriptName 
- * @param {Array<string>} script 
- */
-async function saveScript(connection, env, scriptName, script)
-{
-    if((await connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
-    {
-        //if()
-        //todo: save script function
-    }
-    else await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
 }
 /**
  * 
@@ -290,7 +288,7 @@ async function promptYesNo(env, text, timeout, defaultAnswer="no")
 
         collector.on("end", async (collected, reason) => {
             if(reason === "limit")resolve(collected.array()[0].content.toLowerCase());
-            else if(reason === "time")resolve(defaultAnswer);
+            else resolve(defaultAnswer);
         });
     });
 
@@ -509,7 +507,7 @@ module.exports = {
     execEnv,
 
     displayScript,
-    scriptCreator,
+    createDisplay,
     scriptEditor,
     promptYesNo,
     interpretScript,

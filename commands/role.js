@@ -12,7 +12,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(client, env, args, ping)//todo: add ping to env vars (scripting.js)
+    async execute(client, connection, env, args, ping)//todo: add ping to env vars (scripting.js)
     {
         switch(args[1].toLowerCase())
         {
