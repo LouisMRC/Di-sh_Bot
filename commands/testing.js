@@ -1,7 +1,6 @@
-const { rejects } = require("assert");
 const { Client } = require("discord.js");
-const { resolve } = require("path");
-const { execEnv, displayScript, createDisplay } = require("../modules/scripting");
+const { execEnv } = require("../modules/scripting");
+const { displayScript, createDisplay } = require("../modules/editors");
 
 module.exports = {
     name: 'testing',

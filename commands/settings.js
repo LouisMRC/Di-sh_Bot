@@ -31,7 +31,7 @@ module.exports = {
                             break;
                         }
                         connection.query("UPDATE servers SET Command_prefix=? WHERE Server_ID=?", [args[3], env.server.id])
-                        conf.setPrefix(args[3]);
+                        env.serverConfig.setPrefix(args[3]);
                         channel.send(env.serverLocale.settings_update.replace("$setting", "prefix").replace("$value", env.serverConfig.getPrefix()))
                         break;
                     case "language":

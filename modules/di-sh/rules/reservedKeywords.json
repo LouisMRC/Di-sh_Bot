@@ -1,6 +1,6 @@
 {
     "reserved": [
-        "alias",
+        "script",
         "emoji",
         "member",
         "role",

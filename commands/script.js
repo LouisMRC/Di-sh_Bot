@@ -1,5 +1,6 @@
 const { Channel, Guild, TextChannel, User, Message, MessageEmbed } = require("discord.js");
-const { displayScript, scriptEditor, execEnv, scriptCreator } = require("../modules/scripting");
+const { execEnv } = require("../modules/scripting");
+const { displayScript, scriptEditor } = require("../modules/editors");
 const ServerConfig = require("../modules/serverConfig");
 const { bold } = require("../modules/textDecorations");
 

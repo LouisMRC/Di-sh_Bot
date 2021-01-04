@@ -1,7 +1,6 @@
 const { TextChannel, Collection, Client, Guild, User, Message, MessageEmbed } = require("discord.js");
 const {languages, loadLanguages} = require("./lang");
 const {removeQuote} = require("./textTransformations");
-const { digitOnly } = require("./string");
 const ServerConfig = require("./serverConfig");
 const { windowedText, multiline_codeblock } = require("./textDecorations");
 const { OutputHandler } = require("./commandOutput");
@@ -92,143 +91,7 @@ class execEnv
         this.m_Context = context;
     }
 }
-/**
- * 
- * @param {Array<string>} script 
- * @param {boolean} withCursor 
- * @param {boolean} insert 
- * @param {number} cursorPos 
- */
-function displayScript(script, withCursor, insert, cursorPos = 0)
-{
-    let editorDisplay = (!script.length || (cursorPos === -1 && withCursor) ? "└>" : "") + (cursorPos === -1 && withCursor ? " \n" : "");
-    for(let i = 0; i < script.length; i++)editorDisplay += `${i ? "\n" : ""}${i+1}  ${withCursor && !insert && i === cursorPos ? ">>> " : ""}${script[i]}${withCursor && insert && i === cursorPos ? "\n└> " : ""}`;
-    return multiline_codeblock(editorDisplay);
-}
 
-/**
- * 
- * @param {string} scriptName
- * @param {string} content 
- * @param {execEnv} env
- */
-function createDisplay(scriptName, content, env, saved)
-{
-    return new MessageEmbed()
-                .setColor("BLUE")
-                .addField((scriptName === null ? env.serverLocale.script_editor_title_new : env.serverLocale.script_editor_title.replace("$scriptName", scriptName)), content + (saved === null ? "" : env.serverLocale.script_editor_save_indicator.replace("$isSaved", saved ? "█" : " ")));
-}
-
-/**
- * 
- * @param {Client} client
- * @param {import("mariadb").PoolConnection} connection
- * @param {execEnv} env
- * @param {number} idleTimeout
- * @param {boolean} overwrite
- */
-
-function scriptEditor(client, connection, env, idleTimeout, scriptData = {scriptName: null, script: []})
-{
-    return new Promise((resolve, reject) => {
-        let script = scriptData.script;
-        let scriptName = scriptData.scriptName;
-        let cursorPos = 0;
-        let insert = true;
-        let saved = true;
-
-        env.channel.send(createDisplay(scriptName, displayScript(script, true, true), env, saved))
-            .then(editorWindow => {
-                let collectorEnabled = true;
-                const filter = msg => msg.author.id === env.user.id && collectorEnabled;
-                const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
-
-                collector.on("collect", async message => {
-                    if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))
-                    {
-                        console.log(scriptName);
-                        if(scriptName === null)
-                        {
-                            collectorEnabled = false;
-                            let newName;
-                            do
-                            {
-                                    await textInput(env, env.serverLocale.script_editor_save_create_name, 60_000, true)
-                                    .then(answer => newName = answer.toLowerCase())
-                                    .catch(err => {
-                                        collector.stop(`save: ${err}`);
-                                        return;
-                                    });
-                            }
-                            while((await connection.query("SELECT Script_ID FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, newName])).length && !(await promptYesNo(env, env.serverLocale.script_editor_save_overwrite_question.replace("$scriptName", newName), 12_000)));
-                            scriptName = newName;
-                            collectorEnabled = true;
-                        }
-                        await saveScript(connection, env, scriptName, script);
-                        saved = true;
-                        editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
-                        message.delete();
-                    }
-                    else if(message.content.startsWith(`${env.serverConfig.getPrefix()}quit`))collector.stop("close");
-                    else if(message.content.startsWith(`${env.serverConfig.getPrefix()}exe`))interpretScript(client, connection, env, messageFilter(env.serverConfig.getPrefix(), collector.collected.array(), false))
-                    else if(!startWithPrefix(env.serverConfig.getPrefix(), message.content))
-                    {
-                        if(digitOnly(message.content.split(" ")[0]))
-                        {
-                            var newPos = parseInt(message.content.split(" ")[0]);
-                            cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
-                            insert = false;
-                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
-                            message.delete();
-                        }
-                        else if(message.content.split(" ")[0].startsWith("*") && digitOnly(message.content.split(" ")[0].slice(1)))
-                        {
-                            var newPos = parseInt(message.content.split(" ")[0].slice(1));
-                            cursorPos = (newPos - 1 <= script.length ? newPos -1 : script.length);
-                            insert = true
-                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
-                            message.delete();
-                        }
-                        else
-                        {
-                            if(cursorPos === -1)
-                            {
-                                script.unshift(message.content);
-                                insert = true;
-                                cursorPos++;
-                            }
-                            else if(insert)
-                            {
-                                if(cursorPos < script.length)script.splice(cursorPos + 1, 0, message.content);
-                                else script.push(message.content);
-                                cursorPos++;
-                            }
-                            else
-                            {
-                                script[cursorPos] = message.content;
-                                insert = true;
-                                cursorPos = script.length;
-                            }
-                            message.delete();
-                            saved = false;
-                            editorWindow.edit(createDisplay(scriptName, displayScript(script, true, insert, cursorPos), env, saved));
-                        }
-                    }
-                })
-        
-                collector.on("end", async (collected, reason) => {
-                    if(reason === "close")
-                    {
-                        resolve(reason);
-                    }
-                    else
-                    {
-                        reject(reason);
-                    }
-                });
-            });
-    })
-}
 
 
 
@@ -506,10 +369,11 @@ function openClose(char)
 module.exports = {
     execEnv,
 
-    displayScript,
-    createDisplay,
-    scriptEditor,
+    textInput,
     promptYesNo,
+    messageFilter,
+    commandFilter,
+    startWithPrefix,
     interpretScript,
     interpretUserInput,
     sleep,
