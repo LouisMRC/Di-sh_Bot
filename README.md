@@ -1,2 +1,2 @@
-# GuildUtilityBot
- some tools for discord servers
+# Di-sh bot
+ command interpreter for Discord
