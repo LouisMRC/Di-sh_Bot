@@ -14,9 +14,14 @@ class Interpreter
     {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
+
+    run()
+    {
+
+    }
 }
 
 
 module.exports = {
-    
+    Interpreter
 }

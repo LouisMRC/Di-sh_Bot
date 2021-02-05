@@ -4,7 +4,6 @@ const Discord = require("discord.js");
 const Mariadb = require("mariadb");
 const {token, dbHost, dbName, dbUsername, dbUserPasswd} = require('./config.json');
 const {getServer} = require("./modules/db");
-const {interpretUserInput} = require("./modules/scripting");
 const {languages, loadLanguages} = require("./modules/lang");
 
 
