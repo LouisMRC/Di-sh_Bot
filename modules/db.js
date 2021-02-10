@@ -1,5 +1,12 @@
 const ServerConf = require("./serverConfig");
 
+/**
+ * 
+ * @param {import("mariadb").PoolConnection} connection 
+ * @param {string} serverID 
+ * @param {boolean} verify 
+ * @returns {Promise<ServerConf>}
+ */
 async function getServer(connection, serverID, verify = false)
 {
     let config = null;
@@ -24,7 +31,7 @@ async function dbAddServer(connection, serverID)
 /**
  * 
  * @param {import("mariadb").PoolConnection} connection 
- * @param {execEnv} env 
+ * @param {ExecEnv} env 
  * @param {string} scriptName 
  * @param {Array<string>} script 
  */

@@ -1,5 +1,4 @@
-const { Client } = require("discord.js");
-const { execEnv } = require("../modules/scripting");
+const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 const { displayScript, createDisplay } = require("../modules/editors");
 
 module.exports = {
@@ -8,12 +7,10 @@ module.exports = {
     allowedContexts: ["user", "script"],
     /**
      * 
-     * @param {Client} client
-     * @param {import("mariadb").PoolConnection} connection 
-     * @param {execEnv} env
+     * @param {ExecEnv} env
      * @param {Array<string>} args 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
         switch(args[1].toLowerCase())
         {
@@ -30,6 +27,15 @@ module.exports = {
                     .then(msg => env.channel.send(msg))
                     .catch(() => env.channel.send("Error"));
                     
+                break;
+            case "split":
+                env.send(splitCommand(args[2]));
+                break;
+            case "yes_no":
+                env.send(`Answer: ${await promptYesNo(env, "Yes or No ?", 10000, "yes")}`);
+                break;
+            case "window":
+                env.send(windowedText("*", "_", "|", 2, 2, "left", args[2]));
                 break;
         }
         return env;

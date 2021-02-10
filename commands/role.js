@@ -1,6 +1,5 @@
-const { Guild, Channel } = require("discord.js");
+const execEnv = require("../modules/di-sh/interpreter/execEnv");
 const { isUserMention, toUserMention, getUserID } = require("../modules/mention");
-const { execEnv } = require("../modules/scripting");
 const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'role',
@@ -10,10 +9,10 @@ module.exports = {
      * 
      * @param {execEnv} env
      * @param {Array} args 
-     * @param {boolean} ping 
      */
-    async execute(client, connection, env, args, ping)//todo: add ping to env vars (scripting.js)
+    async execute(env, args, ping = true)//todo: add ping to env vars
     {
+        console.log(args);
         switch(args[1].toLowerCase())
         {
             case "add":

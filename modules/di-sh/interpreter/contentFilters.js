@@ -15,7 +15,8 @@ function messageFilter(prefix, commands, withPrefix)
 /**
  * 
  * @param {string} prefix 
- * @param {array<string>} commands 
+ * @param {Array<string>} commands 
+ * @returns {Array<string>}
  */
 function commandFilter(prefix, commands, withPrefix)
 {
@@ -25,7 +26,19 @@ function commandFilter(prefix, commands, withPrefix)
     return output;
 }
 
+/**
+ * 
+ * @param {string} prefix 
+ * @param {string} command 
+ */
+function startWithPrefix(prefix, command)
+{
+    return command.startsWith(prefix);
+}
+
 module.exports = {
     messageFilter,
-    commandFilter
+    commandFilter,
+    
+    startWithPrefix
 }

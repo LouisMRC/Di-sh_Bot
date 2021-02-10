@@ -1,25 +1,20 @@
-const { Guild, Channel } = require("discord.js");
-const { execEnv } = require("../modules/scripting");
-const ServerConfig = require("../modules/serverConfig");
+const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 
-Discord = require("discord.js");
-GuildConf = require("../modules/serverConfig");
 module.exports = {
     name: 'settings',
     description: 'bot settings',
     allowedContexts: ["user", "script"],
     /**
      * 
-     * @param {import("mariadb").PoolConnection} connection 
-     * @param {execEnv} env
+     * @param {ExecEnv} env
      * @param {Array<string>} args 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
         switch(args[1].toLowerCase())
         {
             case "show":
-                env.channel.send(env.serverLocale.settings_general.replace("$prefix", env.serverConfig.getPrefix()).replace("$language", env.serverConfig.getLanguage()).replace("$AutoNOPING", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")));
+                env.send(env.serverLocale.settings_general.replace("$prefix", env.serverConfig.getPrefix()).replace("$language", env.serverConfig.getLanguage()).replace("$AutoNOPING", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")));
                 break;
             case "edit":
                 switch(args[2].toLowerCase())
@@ -27,26 +22,26 @@ module.exports = {
                     case "prefix":
                         if(args.length < 4)
                         {
-                            env.channel.send(env.serverLocale.settings_general_error_no_prefix);
+                            env.send(env.serverLocale.settings_general_error_no_prefix);
                             break;
                         }
-                        connection.query("UPDATE servers SET Command_prefix=? WHERE Server_ID=?", [args[3], env.server.id])
+                        env.connection.query("UPDATE servers SET Command_prefix=? WHERE Server_ID=?", [args[3], env.server.id])
                         env.serverConfig.setPrefix(args[3]);
                         channel.send(env.serverLocale.settings_update.replace("$setting", "prefix").replace("$value", env.serverConfig.getPrefix()))
                         break;
                     case "language":
                         if(args.length < 4)
                         {
-                            env.channel.send(env.serverLocale.settings_general_error_no_language);
+                            env.send(env.serverLocale.settings_general_error_no_language);
                             break;
                         }
-                        if(setLang(connection, env.server, env.serverConfig, args[3]) === null)/*Send An Error Message*/;
-                        else env.channel.send(env.serverLocale.settings_update.replace("$setting", "language").replace("$value", env.serverConfig.getLanguage()))
+                        if(setLang(env.connection, env.server, env.serverConfig, args[3]) === null)/*Send An Error Message*/;
+                        else env.send(env.serverLocale.settings_update.replace("$setting", "language").replace("$value", env.serverConfig.getLanguage()))
                         break;
                     case "auto-noping":
-                        connection.query("UPDATE servers SET Auto_NOPING=? WHERE Server_ID=?", [!env.serverConfig.isAutoNOPING(), env.server.id])
+                        env.connection.query("UPDATE servers SET Auto_NOPING=? WHERE Server_ID=?", [!env.serverConfig.isAutoNOPING(), env.server.id])
                         env.serverConfig.setAutoNOPING(!env.serverConfig.isAutoNOPING());
-                        env.channel.send(env.serverLocale.settings_update.replace("$setting", "auto-noping").replace("$value", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")))
+                        env.send(env.serverLocale.settings_update.replace("$setting", "auto-noping").replace("$value", (env.serverConfig.isAutoNOPING() ? "ON" : "OFF")))
                         break;
                 }
                 break

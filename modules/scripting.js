@@ -6,22 +6,8 @@ const { windowedText, multiline_codeblock } = require("./textDecorations");
 const { OutputHandler } = require("./di-sh/interpreter/output");
 const { roleExist } = require("./mention");
 const { getServer, saveScript } = require("./db");
+const ExecEnv = require("./di-sh/interpreter/execEnv");
 
-
-
-
-
-
-
-/**
- * 
- * @param {string} prefix 
- * @param {string} command 
- */
-function startWithPrefix(prefix, command)
-{
-    return command.startsWith(prefix);
-}
 
 
 /**
@@ -36,7 +22,7 @@ async function interpretUserInput(client, connection, message)
     let previousOuput = null;
     for(let line of commandFilter(conf.getPrefix(), message.content.split("\n"), true))
     {
-        let env = new execEnv(message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user");
+        let env = new ExecEnv(message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user");
         env.return(previousOuput);
         previousOuput = (await commandExe(client, connection, env, pipe(splitCommand(line.slice(conf.getPrefix().length)), env))).previousOuput;
     }
@@ -46,7 +32,7 @@ async function interpretUserInput(client, connection, message)
  * 
  * @param {Client} client 
  * @param {import("mariadb").PoolConnection} connection 
- * @param {execEnv} env 
+ * @param {ExecEnv} env 
  * @param {Array<string>} script 
  */
 async function interpretScript(client, connection, env, script)
@@ -64,7 +50,7 @@ async function interpretScript(client, connection, env, script)
  * 
  * @param {Client} client
  * @param {import("mariadb").PoolConnection} connection 
- * @param {execEnv} env 
+ * @param {ExecEnv} env 
  * @param {Array} args 
  */
 async function commandExe(client, connection, env, args)
@@ -152,7 +138,7 @@ function splitCommand(command)
 /**
  * 
  * @param {Array<string>} args 
- * @param {execEnv} env 
+ * @param {ExecEnv} env 
  */
 function pipe(args, env)
 {
@@ -182,12 +168,8 @@ function openClose(char)
 }
 
 module.exports = {
-    messageFilter,
-    commandFilter,
-    startWithPrefix,
     interpretScript,
     interpretUserInput,
-    sleep,
     commandExe,
     splitCommand
 }

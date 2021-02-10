@@ -1,4 +1,5 @@
-const { execEnv } = require("../modules/scripting");
+const execEnv = require("../modules/di-sh/interpreter/execEnv");
+
 
 module.exports = {
     name: 'time',
@@ -8,9 +9,8 @@ module.exports = {
      * 
      * @param {execEnv} env
      * @param {Array} args 
-     * @param {boolean} ping 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
         await env.channel.send(Date.now());
         return env;

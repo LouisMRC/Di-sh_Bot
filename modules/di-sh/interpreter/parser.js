@@ -1,3 +1,4 @@
+const { isMention } = require("../../mention");
 
 
 
@@ -9,6 +10,28 @@ class Token
         this.m_Line = line;
         this.m_Pos = pos;
         this.m_Value = value;
+    }
+    /**
+     * 
+     * @param {Token | Array<Token | string>} obj 
+     * @returns {string}
+     */
+    static toString(obj, withSpace = true)
+    {
+        if((typeof obj) === "object")
+        {
+            switch(obj.constructor.name)
+            {
+                case "Array":
+                    let strVal = "";
+                    for(let element of obj)strVal += (((strVal.length !== 0 && withSpace) ? " " : "") + Token.toString(element));
+                    return strVal;
+                case "Token":
+                    return Token.toString(obj.value);
+                    break;
+            }
+        }
+        else return obj;
     }
     get type()
     {
@@ -55,6 +78,8 @@ const Types = {
 
     INFERIOR: 35,
     INFERIOR_EQUAL: 36,
+
+    AT: 37,
 
     AND: 40,
     DOUBLE_AND: 41,
@@ -213,9 +238,10 @@ function tokenize(script)
  */
 function parse(script)
 {
-    let parsedScript = searchTwoCharOperators(script);
+    let parsedScript = searchMention(script);
     parsedScript = searchString(parsedScript);
     parsedScript = searchExpr(parsedScript);
+    for(let i = 0; i < parsedScript.length; i++)parsedScript [i] = removeTokensByType(parsedScript[i], Types.SPACE);
     return parsedScript;
 }
 
@@ -231,6 +257,35 @@ function removeTokensByType(tokens, tokenType)
     return output;
 }
 
+/**
+ * 
+ * @param {Array<Array<Token>>} script 
+ */
+function searchMention(script)
+{
+    let updatedScript = [];
+    for(let i = 0; i < script.length; i++)
+    {
+        let updatedLine = [];
+        for(let j = 0; j < script[i].length; j++)
+        {
+            if(script[i][j].type === Types.INFERIOR)
+            {
+                let newMention = [script[i][j]];
+                while(![Types.SUPERIOR, Types.EOL].includes(script[i][j].type))
+                {
+                    newMention.push(script[i][++j]);
+                }
+                console.log(Token.toString(newMention, false));
+                if(isMention(Token.toString(newMention, false)))updatedLine.push(new Token(Types.STRING, newMention[0].line, newMention[0].pos, Token.toString(newMention, false)));
+                else updatedLine.concat(newMention);
+            }
+            else updatedLine.push(script[i][j]);
+        }
+        updatedScript.push(updatedLine);
+    }
+    return updatedScript;
+}
 
 /**
  * 
@@ -711,6 +766,7 @@ function isIdentifierChar(c)
 }
 
 module.exports = {
+    Token,
     Types,
     tokenize,
     parse,

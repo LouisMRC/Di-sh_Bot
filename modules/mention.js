@@ -1,5 +1,10 @@
 const { Guild } = require("discord.js");
 
+function isMention(str)
+{
+    return isUserMention(str) || isRoleMention(str) || isChannelMention(str);
+}
+
 function isUserMention(str)
 {
     return (str.startsWith("<@!") || str.startsWith("<@")) && str.endsWith(">");
@@ -67,6 +72,8 @@ function getChannelID(mention)
 }
 
 module.exports = {
+    isMention,
+
     isUserMention,
     isRoleMention,
     isChannelMention,

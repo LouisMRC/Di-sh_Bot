@@ -1,7 +1,13 @@
-class execEnv
+const { Guild, TextChannel, User, Client } = require("discord.js");
+const ServerConfig = require("../../serverConfig");
+const { OutputManager, ChannelOutput } = require("./output");
+
+module.exports =  class ExecEnv
 {
     /**
      * 
+     * @param {Client} client 
+     * @param {import("mariadb").PoolConnection} connection 
      * @param {Guild} server 
      * @param {ServerConfig} serverConfig 
      * @param serverLocale 
@@ -9,8 +15,10 @@ class execEnv
      * @param {User} user 
      * @param {string} context 
      */
-    constructor(server, serverConfig, serverLocale, channel, user, context, outputType, outputTarget)
+    constructor(client, connection, server, serverConfig, serverLocale, channel, user, context)
     {
+        this.m_Client = client;
+        this.m_Connection = connection;
         this.m_Server = server;
         this.m_ServerConfig = serverConfig;
         this.m_ServerLocale = serverLocale;
@@ -18,19 +26,34 @@ class execEnv
         this.m_User = user;
         this.m_Context = context;
         this.m_PreviousOutput = null;
-        // this.m_Output = new OutputHandler
+        this.m_OutputManager = new OutputManager(new ChannelOutput(null));
     }
     copy()
     {
-        return new execEnv(this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context);
+        return new ExecEnv(this.m_Client, this.m_Connection, this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context)
     }
+
+    async send(content, targetID = 0)
+    {
+        await this.m_OutputManager.send(content, this, targetID);
+    }
+    async display(targetID = -1)
+    {
+        await this.m_OutputManager.display(this, targetID);
+    }
+
     return(value)
     {
         this.m_PreviousOutput = value;
     }
-    get previousOuput()
+
+    get client()
     {
-        return this.m_PreviousOutput;
+        return this.m_Client;
+    }
+    get connection()
+    {
+        return this.m_Connection;
     }
     get server()
     {
@@ -56,6 +79,16 @@ class execEnv
     {
         return this.m_Context;
     }
+    get previousOuput()
+    {
+        return this.m_PreviousOutput;
+    }
+    get outputManager()
+    {
+        return this.m_OutputManager;
+    }
+
+
     set server(server)
     {
         this.m_Server = server;

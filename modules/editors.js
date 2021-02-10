@@ -1,9 +1,10 @@
+const ExecEnv = require("./di-sh/interpreter/execEnv");
 const { multiline_codeblock } = require("./textDecorations");
 const { digitOnly } = require("./string");
-const { execEnv, textInput, promptYesNo, commandFilter, startWithPrefix, interpretScript } = require("./scripting");
+const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
 const { saveScript } = require("./db");
-const { arch } = require("os");
+const { commandFilter, startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 
 class EditorBuffer
 {
@@ -100,7 +101,7 @@ function displayScript(script, withCursor, insert, cursorPos = 0)
  * 
  * @param {string} scriptName
  * @param {string} content 
- * @param {execEnv} env
+ * @param {ExecEnv} env
  * @param {boolean} saved
  * @param {Array<string>} clipboard
  * @param {string} editorMsg
@@ -126,7 +127,7 @@ function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "
  * 
  * @param {Client} client
  * @param {import("mariadb").PoolConnection} connection
- * @param {execEnv} env
+ * @param {ExecEnv} env
  * @param {number} idleTimeout
  * @param {boolean} overwrite
  */

@@ -1,5 +1,5 @@
-const { sleep, execEnv } = require("../modules/scripting");
-
+const execEnv = require("../modules/di-sh/interpreter/execEnv");
+const { sleep } = require("../modules/di-sh/interpreter/interpreter");
 module.exports = {
     name: 'delay',
     description: 'a simple delay',
@@ -10,7 +10,7 @@ module.exports = {
      * @param {Array} args 
      * @param {boolean} ping 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
         await sleep(parseInt(args[1]));
         return env;

@@ -8,9 +8,8 @@ module.exports = {
      * 
      * @param {execEnv} env
      * @param {Array} args 
-     * @param {boolean} ping 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
         //todo: help
         return env;

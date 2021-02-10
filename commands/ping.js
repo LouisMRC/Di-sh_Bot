@@ -1,4 +1,4 @@
-const { execEnv } = require("../modules/scripting");
+const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'ping',
@@ -6,14 +6,13 @@ module.exports = {
     allowedContexts: ["user", "script"],
     /**
      * 
-     * @param {execEnv} env
+     * @param {ExecEnv} env
      * @param {Array} args 
-     * @param {boolean} ping 
      */
-    async execute(client, connection, env, args)
+    async execute(env, args)
     {
-        await env.channel.send("Pong!")
-            .then(async () => await env.channel.send(":wink:"));
+        await env.send("Pong!")
+            .then(async () => await env.send(":wink:"));
         return env;
     }
 }

@@ -1,40 +1,75 @@
+const ExecEnv = require("./execEnv");
 
-class OutputHandler
+class OutputManager
 {
-    constructor(outputs)
+    constructor(defaultOutput)
     {
+        this.m_OutputTargets = [defaultOutput];
+    }
+    async send(outputContent, env, outputID = 0)//send the ouput to the selected ouput buffer(outputID, -1:all)
+    {
+        if(outputID === -1)
+        {
+            for(let target of this.m_OutputTargets)
+                await target.send(outputContent, env);
+        }
+        else await this.m_OutputTargets[outputID].send(outputContent, env);
+    }
+    async display(env, outputID = 0)
+    {
+        if(outputID === -1)for(let i = 0; i < this.m_OutputTargets.length; i++)await this.m_OutputTargets[i].display(env);
+        else await this.m_OutputTargets[outputID].display(env);
+    }
+
+    add(newOutputTarget)
+    {
+        this.m_OutputTargets.push(newOutputTarget);
+    }
+    remove(id)
+    {
+        this.m_OutputTargets.splice(id, 1);
+    }
+}
+
+
+class BasicOutput
+{
+    constructor(ouputTarget, direct = true)
+    {
+        this.m_Target = ouputTarget;
+        this.m_IsDirectOutput = direct;
         this.m_OutputBuffer = [];
     }
 }
 
-
-class ChannelOutput
+class ChannelOutput extends BasicOutput
 {
-    constructor(ouputTarget = null)
+    constructor(ouputTarget, direct = true)
     {
-        this.m_Target = ouputTarget;
-        
+        super(ouputTarget, direct);
     }
-    send(output)
+    async send(outputContent, env)
     {
-        this.m_OutputBuffer.unshift(output);
+        this.m_OutputBuffer.unshift(outputContent);
+        if(this.m_IsDirectOutput)await this.display(env);
     }
     /**
      * 
-     * @param {execEnv} env 
+     * @param {ExecEnv} env 
      */
     async display(env)
     {
-        for(let i = 0; i < this.m_OutputBuffer.length; i++)await env.channel.send(this.m_OutputBuffer.pop());
+        let channel = (this.m_Target === null ? env.channel : this.m_Target);
+        for(let i = 0; i < this.m_OutputBuffer.length; i++)await channel.send(this.m_OutputBuffer.pop());
     }
 }
-class ConsoleOutput
+class ConsoleOutput extends BasicOutput
 {
-    constructor(ouputTarget)
+    constructor(ouputTarget, direct = true)
     {
-        this.m_Target = ouputTarget;
+        super(ouputTarget, direct);
     }
-    send(output)
+    send(outputContent, env)
     {
 
     }
@@ -43,13 +78,13 @@ class ConsoleOutput
 
     }
 }
-class FileOutput
+class FileOutput extends BasicOutput
 {
-    constructor(ouputTarget)
+    constructor(ouputTarget, direct = true)
     {
-        this.m_Target = ouputTarget;
+        super(ouputTarget, direct);
     }
-    send(output)
+    send(outputContent, env)
     {
 
     }
@@ -60,7 +95,7 @@ class FileOutput
 }
 
 module.exports = {
-    OutputHandler,
+    OutputManager,
 
     ChannelOutput,
     ConsoleOutput,

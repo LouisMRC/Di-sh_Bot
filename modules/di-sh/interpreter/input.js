@@ -1,8 +1,9 @@
+const ExecEnv = require("./execEnv");
 
 
 /**
  * 
- * @param {execEnv} env 
+ * @param {ExecEnv} env 
  * @param {string} msg 
  */
 function text(env, msg, idleTimeout, allowRetry = false)
@@ -43,7 +44,7 @@ function text(env, msg, idleTimeout, allowRetry = false)
 
 /**
  * 
- * @param {execEnv} env
+ * @param {ExecEnv} env
  * @param {string} text 
  * @param {number} timeout 
  * @param {string} defaultAnswer 
@@ -70,4 +71,9 @@ async function yesNo(env, text, timeout, defaultAnswer="no")
         case "no":
             return false;
     }
+}
+
+module.exports = {
+    text,
+    yesNo
 }
