@@ -14,6 +14,7 @@ module.exports = {
     */
     async execute(env, args)
     {
+        console.log(args);
         switch(args[1])
         {
             case "create":

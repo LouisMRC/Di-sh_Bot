@@ -42,7 +42,7 @@ class Interpreter
      */
     async execute(instruction)
     {
-        console.log(Token.toString(instruction));
+        // console.log(Token.toString(instruction));
         // const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
         const ping = true;
         // const comOutput = args[args.length -1] !== "noOutput";
@@ -103,7 +103,19 @@ function prepareScript(env, script)
 function prepareArgs(tokens)
 {
     let args = [];
-    for(let token of tokens)args.push(Token.toString(token));
+    let arg = [];
+    for(let token of tokens)
+    {
+        console.log(token);
+        if(token.type === Types.SPACE)
+        {
+            args.push(Token.toString(arg, false));
+            arg = [];
+        }
+        else arg.push(Token.toString(token));
+    }
+    if(arg.length)args.push(Token.toString(arg, false));
+    // console.log(args);
     return args;
 }
 

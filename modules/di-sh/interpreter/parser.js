@@ -241,7 +241,7 @@ function parse(script)
     let parsedScript = searchMention(script);
     parsedScript = searchString(parsedScript);
     parsedScript = searchExpr(parsedScript);
-    for(let i = 0; i < parsedScript.length; i++)parsedScript [i] = removeTokensByType(parsedScript[i], Types.SPACE);
+    // for(let i = 0; i < parsedScript.length; i++)parsedScript [i] = removeTokensByType(parsedScript[i], Types.SPACE);
     return parsedScript;
 }
 
