@@ -27,11 +27,15 @@ module.exports = {
                 switch(args[2].toLowerCase())
                 {
                     case "channel":
-                        env.channel.send(`ENV/CHANNEL: ${toChannelMention(env.channel.id)}`);
+                        env.send(`ENV/CHANNEL: ${toChannelMention(env.channel.id)}`);
                         break;
                     case "user":
-                        env.channel.send(`ENV/USER: ${toUserMention(env.user.id)}`);
+                        env.send(`ENV/USER: ${toUserMention(env.user.id)}`);
                         break;
+                    case "context":
+                        env.send(`ENV/CONTEXT: ${env.context}`);
+                        break;
+
                 }
                 break;
             case "ouput_handler":

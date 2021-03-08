@@ -205,27 +205,18 @@ function tokenize(script)
                     tokenizedLine.push(new Token(Types.SPACE, i, j, c));
                     break;
                 default:
-                    if(isDigit(c))
+                    if(isDigit(c) || isIdentifierChar(c))
                     {
+                        let type = isDigit(c) ? Types.NUMBER : Types.IDENTIFIER;
+                        console.log(type);
                         let tokenValue = c;
-                        while(j+1 < line.length && isDigit(line[j+1]))
+                        while(j+1 < line.length && (isIdentifierChar(line[j+1]) || isDigit(line[j+1])))
                         {
-                            j++;
-                            tokenValue += line[j];
+                            tokenValue += line[++j];
+                            if(isIdentifierChar(line[j]) && type === Types.NUMBER)type = Types.IDENTIFIER;
                         }
-                        tokenizedLine.push(new Token(Types.NUMBER, i, j, tokenValue));
-                    }
-                    else if(isIdentifierChar(c))
-                    {
-                        let tokenValue = c;
-                        let k = j;
-                        while(k+1 < line.length && (isIdentifierChar(line[k+1]) || isDigit(line[k+1])))
-                        {
-                            k++;
-                            tokenValue += line[k];
-                        }
-                        tokenizedLine.push(new Token(Types.IDENTIFIER, i, j, tokenValue));
-                        j = k;
+                        console.log(tokenValue);
+                        tokenizedLine.push(new Token(type, i, j, tokenValue));
                     }
                     else tokenizedLine.push(new Token(Types.UNEXPECTED, i, j, c));
                     break;
