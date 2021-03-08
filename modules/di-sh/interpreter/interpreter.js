@@ -49,7 +49,7 @@ class Interpreter
         if(this.m_Env.client.commands.has(Token.toString(instruction[0]).toLowerCase()))
         {
             const command = this.m_Env.client.commands.get(Token.toString(instruction[0]).toLowerCase());
-            if(command.allowedContexts.includes(this.m_Env.context))await command.execute(this.m_Env, prepareArgs(removeTokensByType(instruction, Types.EOL)));
+            if(command.allowedContexts.includes(this.m_Env.context))await command.execute(this.m_Env, prepareArgs(removeTokensByType(instruction, Types.EOL), this.m_Env));
             else this.m_Env.send("ENV Error!!!").then(() => console.log("ENV ERROR!!!"));//hardcoded
         }
         else
@@ -99,8 +99,9 @@ function prepareScript(env, script)
 /**
  * 
  * @param {Array<Token>} tokens 
+ * @param {ExecEnv} env
  */
-function prepareArgs(tokens)
+function prepareArgs(tokens, env)
 {
     let args = [];
     let arg = [];
@@ -109,13 +110,14 @@ function prepareArgs(tokens)
         console.log(token);
         if(token.type === Types.SPACE)
         {
+            if(!arg.length)continue;
             args.push(Token.toString(arg, false));
             arg = [];
         }
+        else if(token.type === Types.PIPE)args.push(env.pipe);
         else arg.push(Token.toString(token));
     }
     if(arg.length)args.push(Token.toString(arg, false));
-    // console.log(args);
     return args;
 }
 

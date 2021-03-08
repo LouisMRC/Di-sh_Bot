@@ -11,10 +11,10 @@ module.exports = {
      */
     async execute(env, args)
     {
-        let returnVal;
-        if(args.length > 2)returnVal = await env.server.channels.cache.get(args[1]).send(args[2]);
-        else returnVal = await env.send(args[1]);
-        env.return(returnVal);
+        let message;
+        if(args.length > 2)message = await env.server.channels.cache.get(args[1]).send(args[2]);
+        else message = (await env.send(args[1])).get(0)[0];
+        env.pipeOutput(message.id);
         return env;
     }
 }

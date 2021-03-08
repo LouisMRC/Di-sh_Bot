@@ -25,7 +25,7 @@ module.exports =  class ExecEnv
         this.m_CurrentChannel = channel;
         this.m_User = user;
         this.m_Context = context;
-        this.m_PreviousOutput = null;
+        this.m_Pipe = null;
         this.m_OutputManager = new OutputManager(new ChannelOutput(null));
     }
     copy()
@@ -35,16 +35,16 @@ module.exports =  class ExecEnv
 
     async send(content, targetID = 0)
     {
-        await this.m_OutputManager.send(content, this, targetID);
+        return await this.m_OutputManager.send(content, this, targetID);
     }
     async display(targetID = -1)
     {
-        await this.m_OutputManager.display(this, targetID);
+        return await this.m_OutputManager.display(this, targetID);
     }
 
-    return(value)
+    pipeOutput(value)
     {
-        this.m_PreviousOutput = value;
+        this.m_Pipe = value;
     }
 
     get client()
@@ -79,9 +79,9 @@ module.exports =  class ExecEnv
     {
         return this.m_Context;
     }
-    get previousOuput()
+    get pipe()
     {
-        return this.m_PreviousOutput;
+        return this.m_Pipe;
     }
     get outputManager()
     {

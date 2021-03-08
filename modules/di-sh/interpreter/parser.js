@@ -49,7 +49,10 @@ class Token
     {
         return this.m_Value;
     }
-    
+    set type(newType)
+    {
+        this.m_Type = newType;
+    }
 }
 const Types = {
     PLUS: 0,
@@ -98,6 +101,8 @@ const Types = {
 
     LEFT_CURLY: 56,
     RIGHT_CURLY: 57,
+
+    PIPE: 58,
 
     IDENTIFIER: 60,
     NUMBER: 61,
@@ -241,7 +246,6 @@ function parse(script)
     let parsedScript = searchMention(script);
     parsedScript = searchString(parsedScript);
     parsedScript = searchExpr(parsedScript);
-    // for(let i = 0; i < parsedScript.length; i++)parsedScript [i] = removeTokensByType(parsedScript[i], Types.SPACE);
     return parsedScript;
 }
 
@@ -348,6 +352,7 @@ function searchExpr(script)
             }
             else updatedLine.push(token);
         }
+        for(let i = 0; i < updatedLine.length; i++)if(updatedLine[i].type === Types.MINUS)updatedLine[i].type = Types.PIPE;
         updatedScript.push(updatedLine);
     }
     return updatedScript;

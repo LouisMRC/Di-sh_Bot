@@ -33,7 +33,7 @@ pool.getConnection()
         Client.on("message", async (message) => {
             let env = await createUserTermEnv(Client, connection, message);
             await (new Interpreter(prepareScript(env, message.content), env, [])).run();
-            if(isUserMention(message.content) && getUserID(message.content) === Client.user.id)message.reply(languages.get(servConf.getLanguage()).help_dialog.replace("$prefix", servConf.getPrefix()).replace("$prefix", servConf.getPrefix()));
+            if(isUserMention(message.content) && getUserID(message.content) === Client.user.id)message.reply(languages.get(env.serverConfig.getLanguage()).help_dialog.replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()));
         });
 
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
@@ -41,7 +41,7 @@ pool.getConnection()
             {
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 await (new Interpreter(prepareScript(env, newMessage.content), env, [])).run();
-                if(isUserMention(newMessage.content) && getUserID(newMessage.content) === Client.user.id)newMessage.reply(languages.get(servConf.getLanguage()).help_dialog.replace("$prefix", servConf.getPrefix()).replace("$prefix", servConf.getPrefix()));
+                if(isUserMention(newMessage.content) && getUserID(newMessage.content) === Client.user.id)newMessage.reply(languages.get(env.serverConfig.getLanguage()).help_dialog.replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()));
             }
         })
 

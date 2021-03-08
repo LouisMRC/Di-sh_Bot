@@ -14,7 +14,6 @@ module.exports = {
     */
     async execute(env, args)
     {
-        console.log(args);
         switch(args[1])
         {
             case "create":
@@ -27,7 +26,8 @@ module.exports = {
                     .then(async () => await env.send("finished"))
                     .catch(async () => await env.send("timeout"));
                 break;
-            case "delete":
+            case "delete"://hardcode
+                if(env.user.id === env.server.owner.id)env.connection.query("DELETE FROM scripts WHERE Server_ID=? AND Script_name=?", [env.server.id, args[2].toLowerCase()]);
                 break;
             case "edit":
                 var script = await env.connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[2].toLowerCase()]);
