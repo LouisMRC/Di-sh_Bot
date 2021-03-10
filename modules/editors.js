@@ -3,7 +3,7 @@ const { multiline_codeblock } = require("./textDecorations");
 const { digitOnly } = require("./string");
 const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
-const { saveScript } = require("./db");
+const { saveScript } = require("./system/db");
 const { commandFilter, startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 
 class EditorBuffer
@@ -136,7 +136,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
 {
     return new Promise((resolve, reject) => {
         let script = new EditorBuffer(scriptData.scriptName, scriptData.script)
-        let cursorPos = 0;
+        let cursorPos = -1;
         let clipboard = [];
         let insert = true;
         let saved = true;
@@ -198,7 +198,6 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                 cursorPos = (newPos - 1 <= script.read().length ? (newPos -1 > -2 ? newPos -1 : -1) : script.read().length);
                                 insert = true
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
-                                message.delete();
                                 break;
 
                             case "mv":
@@ -414,6 +413,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                         message.delete();
                         insert = true;
                         saved = false;
+                        cursorPos++;
                         editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                     }
                 })

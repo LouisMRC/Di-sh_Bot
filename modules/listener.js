@@ -1,17 +1,16 @@
 const {Message, Channel, Client, Guild, User} = require("discord.js");
+const ExecEnv = require("./di-sh/interpreter/execEnv");
 const { toEmojiMention } = require("./mention");
-const { sleep, interpretScript } = require("./scripting");
+const { spawnProcess } = require("./di-sh/interpreter/interpreter");
 
 let reactionListeners = new Map();
 /**
  * 
- * @param {Client} client
- * @param {import("mariadb").PoolConnection} connection
- * @param {Guild} guild
+ * @param {ExecEnv} env
  * @param {Message} message 
  * @param {Array<string, Array<Array>} commands
  */
-async function enableReact(client, connection, guild, conf, message, commands)
+async function enableReact(env, message, commands)
 {
     let emojis = [], scripts = [];
     for(command of commands)
@@ -26,7 +25,7 @@ async function enableReact(client, connection, guild, conf, message, commands)
         for(let i in emojis)
         {
             if(emojis[i] === (reaction.emoji.id === null ? reaction.emoji.name : toEmojiMention(reaction.emoji.name, reaction.emoji.id)))
-                await interpretScript(client, connection, guild, conf, message.channel, user, scripts[i]);
+                spawnProcess(env, "reactProc", scripts[i])//hardcoded
         }
         reaction.users.remove(user.id);
     });

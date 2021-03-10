@@ -75,7 +75,7 @@ module.exports = {
                 var ids = args[2].split("/").slice(-3);
                 var message = await (await (await env.client.guilds.fetch(ids[0])).channels.cache.get(ids[1])).messages.fetch(ids[2]);
                 await env.connection.query("SELECT Commands FROM reaction_listeners WHERE Server_ID=? AND Channel_ID=? AND Message_ID=?", [ids[0], ids[1], ids[2]])
-                .then(rows => enableReact(env.client, env.connection, env.server, env.serverConfig, message, JSON.parse(rows[0].Commands)).then(() => env.send("This Listener Is Now Enabled!")));//hardcoded
+                .then(rows => enableReact(env, message, JSON.parse(rows[0].Commands)).then(() => env.send("This Listener Is Now Enabled!")));//hardcoded
                 break;
             case "show":
                 break;

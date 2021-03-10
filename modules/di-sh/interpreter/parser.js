@@ -208,14 +208,12 @@ function tokenize(script)
                     if(isDigit(c) || isIdentifierChar(c))
                     {
                         let type = isDigit(c) ? Types.NUMBER : Types.IDENTIFIER;
-                        console.log(type);
                         let tokenValue = c;
                         while(j+1 < line.length && (isIdentifierChar(line[j+1]) || isDigit(line[j+1])))
                         {
                             tokenValue += line[++j];
                             if(isIdentifierChar(line[j]) && type === Types.NUMBER)type = Types.IDENTIFIER;
                         }
-                        console.log(tokenValue);
                         tokenizedLine.push(new Token(type, i, j, tokenValue));
                     }
                     else tokenizedLine.push(new Token(Types.UNEXPECTED, i, j, c));
@@ -271,7 +269,6 @@ function searchMention(script)
                 {
                     newMention.push(script[i][++j]);
                 }
-                console.log(Token.toString(newMention, false));
                 if(isMention(Token.toString(newMention, false)))updatedLine.push(new Token(Types.STRING, newMention[0].line, newMention[0].pos, Token.toString(newMention, false)));
                 else updatedLine.concat(newMention);
             }

@@ -1,11 +1,11 @@
 const { TextChannel, Collection, Client, Guild, User, Message, MessageEmbed } = require("discord.js");
 const {languages, loadLanguages} = require("./lang");
 const {removeQuote} = require("./textTransformations");
-const ServerConfig = require("./serverConfig");
+// const ServerConfig = require("./serverConfig");
 const { windowedText, multiline_codeblock } = require("./textDecorations");
 const { OutputHandler } = require("./di-sh/interpreter/output");
 const { roleExist } = require("./mention");
-const { getServer, saveScript } = require("./db");
+// const { getServer, saveScript } = require("./db");
 const ExecEnv = require("./di-sh/interpreter/execEnv");
 
 

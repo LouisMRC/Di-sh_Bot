@@ -1,8 +1,8 @@
-const { execEnv } = require("../modules/scripting");
+const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'help',
-    description: 'the documentation for the robot',
+    description: 'the documentation for the bot',
     allowedContexts: ["user"],
     /**
      * 

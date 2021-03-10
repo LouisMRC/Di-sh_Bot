@@ -35,6 +35,10 @@ module.exports = {
                     case "context":
                         env.send(`ENV/CONTEXT: ${env.context}`);
                         break;
+                    case "exit":
+                        break;
+                    case "pause":
+                        break;
 
                 }
                 break;

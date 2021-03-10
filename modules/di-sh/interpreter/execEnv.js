@@ -1,8 +1,8 @@
 const { Guild, TextChannel, User, Client } = require("discord.js");
-const ServerConfig = require("../../serverConfig");
+const ServerConfig = require("../../system/serverConfig");
 const { OutputManager, ChannelOutput } = require("./output");
 
-module.exports =  class ExecEnv
+module.exports = class ExecEnv
 {
     /**
      * 
@@ -25,6 +25,7 @@ module.exports =  class ExecEnv
         this.m_CurrentChannel = channel;
         this.m_User = user;
         this.m_Context = context;
+        this.m_ProcessID = null;
         this.m_Pipe = null;
         this.m_OutputManager = new OutputManager(new ChannelOutput(null));
     }
@@ -79,6 +80,10 @@ module.exports =  class ExecEnv
     {
         return this.m_Context;
     }
+    get processID()
+    {
+        return this.m_ProcessID;
+    }
     get pipe()
     {
         return this.m_Pipe;
@@ -112,5 +117,9 @@ module.exports =  class ExecEnv
     set context(context)
     {
         this.m_Context = context;
+    }
+    set processID(processID)
+    {
+        this.m_ProcessID = processID;
     }
 }

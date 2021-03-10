@@ -1,12 +1,13 @@
 const { parse, tokenize, Token, removeTokensByType, Types } = require("./parser");
 const ExecEnv = require("./execEnv");
 const { Message } = require("discord.js");
-const { getServer } = require("../../db");
+const { getServer } = require("../../system/db");
 const { languages } = require("../../lang");
-const script = require("../../../commands/script");
 const { commandFilter } = require("./contentFilters");
+const { sleep } = require("../../system/system");
+const EventEmitter = require("events");
 
-class Interpreter
+class Interpreter extends EventEmitter
 {
     /**
      * 
@@ -16,24 +17,47 @@ class Interpreter
      */
     constructor(script, env, argv)
     {
+        super();
         this.m_Script = parse(tokenize(script));
         this.m_Env = env;
         this.m_InterpreterArgv;
         this.m_ScriptArgv;
-        this.m_cursor = 0;
-        this.m_running = false;
+        this.m_Cursor = 0;
+        this.m_Running = false;
+        this.m_Terminated = false;
+
+        // this.m_LogOutput;
     }
     step(steps)
     {
-        for(let i = 0; i < steps; i++)
+        for(let i = 0; this.m_Cursor < this.m_Script.length && i < steps; i++)
         {
-            this.execute(this.m_Script[this.m_cursor]);
-            this.m_cursor++;
+            this.execute(this.m_Script[this.m_Cursor]);
+            this.m_Cursor++;
         }
+        if(this.m_Cursor >= this.m_Script.length)this.emit("terminated", 0);
     }
     async run()
     {
-        for( ; this.m_cursor < this.m_Script.length; this.m_cursor++)await this.execute(this.m_Script[this.m_cursor]);
+        this.m_Running = true;
+        for( ; this.m_Cursor < this.m_Script.length && this.m_Running; this.m_Cursor++)await this.execute(this.m_Script[this.m_Cursor]);
+        if(this.m_Cursor >= this.m_Script.length)this.emit("terminated", 0);
+    }
+    exit(code = 0)
+    {
+        this.emit("terminated", code);
+    }
+    stop()
+    {
+        this.m_Running = false;
+    }
+    jump(instructionNumber)
+    {
+        let isRunning = this.m_Running;
+        this.m_Running = false;
+        this.m_Cursor = instructionNumber;
+        if(isRunning)this.m_Running = true;
+
     }
 
     /**
@@ -42,7 +66,6 @@ class Interpreter
      */
     async execute(instruction)
     {
-        // console.log(Token.toString(instruction));
         // const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
         const ping = true;
         // const comOutput = args[args.length -1] !== "noOutput";
@@ -56,11 +79,20 @@ class Interpreter
         {
             await this.m_Env.connection.query("SELECT Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
             .then(async row => {
-                if(row.length)
-                    await (new Interpreter(row[0].Script, createScriptEnv(this.m_Env.copy()), [Token.toString(instruction[0]).toLowerCase()])).run();        
+                if(row.length)spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script);
+                    // await (new Interpreter(row[0].Script, createScriptEnv(this.m_Env.copy()), [Token.toString(instruction[0]).toLowerCase()])).run();        
             })
             .catch(console.error);
         }
+    }
+
+    get env()
+    {
+        return this.m_Env;
+    }
+    get running()
+    {
+        return this.m_Running;
     }
 }
 
@@ -121,14 +153,104 @@ function prepareArgs(tokens, env)
     return args;
 }
 
+
+
+class ProcessManager
+{
+    constructor()
+    {
+        this.m_Processes = new Map();
+        this.m_InputQueue = [];
+        this.requestHandler();
+    }
+
+
+    spawn(env, name, script)
+    {
+        this.m_InputQueue.push(new Process(env, name, script));
+    }
+    kill(processID)
+    {
+        this.m_Processes.get(processID).interpreter.stop();
+        this.m_Processes.delete(processID);
+    }
+    /**
+     * 
+     * @param {Process} process 
+     */
+    launchProcess(process)
+    {
+        let id = 0;
+        while(this.m_Processes.has(id))id++;
+        process.interpreter.once("terminated", code => {
+            this.m_Processes.delete(id);
+        });
+        process.interpreter.env.processID = id;
+        this.m_Processes.set(id, process);
+        process.interpreter.run();
+    }
+    async requestHandler()
+    {
+        while(1)
+        {
+            await sleep(100);
+            while(this.m_InputQueue.length > 0)this.launchProcess(this.m_InputQueue.shift());
+        }
+    }
+
+    get processes()
+    {
+        return this.m_Processes;
+    }
+}
+
+class Process
+{
+    /**
+     * 
+     * @param {ExecEnv} env 
+     * @param {Array<string>} script 
+     * @param {string} name 
+     */
+    constructor(env, name, script)
+    {
+        this.m_Name = name;
+        this.m_Interpreter = new Interpreter(script, env, []);
+    }
+    get name()
+    {
+        return this.m_Name;
+    }
+    get interpreter()
+    {
+        return this.m_Interpreter;
+    }
+
+    set name(newName)
+    {
+        this.m_Name = newName;
+    }
+}
+
 /**
  * 
- * @param {number} ms 
+ * @param {ExecEnv} env 
+ * @param {Array<string>} script 
+ * @param {string} name 
  */
-function sleep(ms)
+function spawnProcess(env, name, script)
 {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    if(!env.client.processes.has(env.server.id))env.client.processes.set(env.server.id, new ProcessManager());
+    env.client.processes.get(env.server.id).spawn(env, name, script);
 }
+
+function killProcess(env, processID)
+{
+    env.client.processes.get(env.server.id).kill(processID);
+}
+
+
+
 
 module.exports = {
     Interpreter,
@@ -137,5 +259,7 @@ module.exports = {
     prepareScript,
     prepareArgs,
 
-    sleep
+    ProcessManager,
+    spawnProcess,
+    killProcess
 }
