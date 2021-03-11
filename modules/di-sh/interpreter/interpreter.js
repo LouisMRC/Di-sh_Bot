@@ -23,6 +23,7 @@ class Interpreter extends EventEmitter
         this.m_InterpreterArgv;
         this.m_ScriptArgv;
         this.m_Cursor = 0;
+        this.m_Run = false;
         this.m_Running = false;
         this.m_Terminated = false;
         this.m_Labels = new Map();
@@ -42,11 +43,12 @@ class Interpreter extends EventEmitter
     }
     async run()
     {
-        console.log(++this.interpreterCounter);
+        this.m_Run = true;
         this.m_Running = true;
-        for( ; this.m_Cursor < this.m_Script.length && this.m_Running; this.m_Cursor++)await this.execute(this.m_Script[this.m_Cursor]);
+        for( ; this.m_Cursor < this.m_Script.length && this.m_Run; this.m_Cursor++)await this.execute(this.m_Script[this.m_Cursor]);
+        console.log("finished");
+        this.m_Running = false;
         if(this.m_Cursor >= this.m_Script.length)this.emit("terminated", 0);
-        this.interpreterCounter--;
     }
     exit(code = 0)
     {
@@ -54,12 +56,18 @@ class Interpreter extends EventEmitter
     }
     stop()
     {
-        this.m_Running = false;
+        this.m_Run = false;
     }
-    jump(instructionNumber)
+    async jump(instructionNumber)
     {
-        let isRunning = this.m_Running;
-        this.m_Running = false;
+        let isRunning = this.m_Run;
+        this.m_Run = false;
+        while(this.m_Running)
+        {
+            // console.log(this.m_Running);
+            await sleep(10);
+        }
+        console.log("process stopped")
         this.m_Cursor = instructionNumber;
         if(isRunning)this.run();
 
