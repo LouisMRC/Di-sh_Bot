@@ -25,8 +25,11 @@ class Interpreter extends EventEmitter
         this.m_Cursor = 0;
         this.m_Running = false;
         this.m_Terminated = false;
+        this.m_Labels = new Map();
 
         // this.m_LogOutput;
+
+        this.m_Env.interpreter = this;
     }
     step(steps)
     {
@@ -39,9 +42,11 @@ class Interpreter extends EventEmitter
     }
     async run()
     {
+        console.log(++this.interpreterCounter);
         this.m_Running = true;
         for( ; this.m_Cursor < this.m_Script.length && this.m_Running; this.m_Cursor++)await this.execute(this.m_Script[this.m_Cursor]);
         if(this.m_Cursor >= this.m_Script.length)this.emit("terminated", 0);
+        this.interpreterCounter--;
     }
     exit(code = 0)
     {
@@ -56,8 +61,13 @@ class Interpreter extends EventEmitter
         let isRunning = this.m_Running;
         this.m_Running = false;
         this.m_Cursor = instructionNumber;
-        if(isRunning)this.m_Running = true;
+        if(isRunning)this.run();
 
+    }
+
+    createLabel(name)
+    {
+        this.m_Labels.set(name, this.m_Cursor);
     }
 
     /**
@@ -79,7 +89,7 @@ class Interpreter extends EventEmitter
         {
             await this.m_Env.connection.query("SELECT Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
             .then(async row => {
-                if(row.length)spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script);
+                if(row.length)this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));
                     // await (new Interpreter(row[0].Script, createScriptEnv(this.m_Env.copy()), [Token.toString(instruction[0]).toLowerCase()])).run();        
             })
             .catch(console.error);
@@ -93,6 +103,10 @@ class Interpreter extends EventEmitter
     get running()
     {
         return this.m_Running;
+    }
+    get labels()
+    {
+        return this.m_Labels;
     }
 }
 
@@ -167,12 +181,26 @@ class ProcessManager
 
     spawn(env, name, script)
     {
-        this.m_InputQueue.push(new Process(env, name, script));
+        let newProcess = new Process(env, name, script);
+        let pidPromise = new Promise(resolve => {
+            newProcess.once("activated", pid => resolve(pid));
+        });
+        this.m_InputQueue.push(newProcess);
+        return pidPromise;
     }
     kill(processID)
     {
         this.m_Processes.get(processID).interpreter.stop();
         this.m_Processes.delete(processID);
+    }
+
+    stop(pid)
+    {
+        this.m_Processes.get(pid).interpreter.stop();
+    }
+    continue(pid)
+    {
+        this.m_Processes.get(pid).interpreter.run();
     }
     /**
      * 
@@ -187,6 +215,7 @@ class ProcessManager
         });
         process.interpreter.env.processID = id;
         this.m_Processes.set(id, process);
+        process.emit("activated", id);
         process.interpreter.run();
     }
     async requestHandler()
@@ -204,7 +233,7 @@ class ProcessManager
     }
 }
 
-class Process
+class Process extends EventEmitter
 {
     /**
      * 
@@ -214,6 +243,7 @@ class Process
      */
     constructor(env, name, script)
     {
+        super();
         this.m_Name = name;
         this.m_Interpreter = new Interpreter(script, env, []);
     }
@@ -241,7 +271,7 @@ class Process
 function spawnProcess(env, name, script)
 {
     if(!env.client.processes.has(env.server.id))env.client.processes.set(env.server.id, new ProcessManager());
-    env.client.processes.get(env.server.id).spawn(env, name, script);
+    return env.client.processes.get(env.server.id).spawn(env, name, script);
 }
 
 function killProcess(env, processID)

@@ -1,3 +1,4 @@
+const { ReactionEmoji } = require("discord.js");
 const execEnv = require("../modules/di-sh/interpreter/execEnv");
 const { killProcess } = require("../modules/di-sh/interpreter/interpreter");
 
@@ -28,8 +29,28 @@ module.exports = {
                 killProcess(env, parseInt(args[2]));
                 break;
             case "await":
+                env.pipeOutput(await awaitProcess(env, parseInt(args[2])));
+                break;
+            case "stop":
+                env.client.processes.get(env.server.id).stop(parseInt(args[2]));
+                break;
+            case "continue":
+                env.client.processes.get(env.server.id).continue(parseInt(args[2]));
                 break;
         }
         return env;
     }
+}
+
+/**
+ * 
+ * @param {number} processID 
+ */
+function awaitProcess(env, processID)
+{
+    return new Promise((resolve, reject) => {
+        let process = env.client.processes.get(env.server.id).processes.get(processID);
+        process.interpreter.once("terminated", code => resolve(code));
+
+    });
 }

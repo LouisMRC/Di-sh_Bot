@@ -27,6 +27,7 @@ module.exports = class ExecEnv
         this.m_Context = context;
         this.m_ProcessID = null;
         this.m_Pipe = null;
+        this.m_Interpreter = null;
         this.m_OutputManager = new OutputManager(new ChannelOutput(null));
     }
     copy()
@@ -88,6 +89,10 @@ module.exports = class ExecEnv
     {
         return this.m_Pipe;
     }
+    get interpreter()
+    {
+        return this.m_Interpreter;
+    }
     get outputManager()
     {
         return this.m_OutputManager;
@@ -121,5 +126,9 @@ module.exports = class ExecEnv
     set processID(processID)
     {
         this.m_ProcessID = processID;
+    }
+    set interpreter(interpreter)
+    {
+        this.m_Interpreter = interpreter;
     }
 }
