@@ -5,7 +5,7 @@ const { killProcess } = require("../modules/di-sh/interpreter/interpreter");
 module.exports = {
     name: 'process',
     description: 'manage processes on the server',
-    allowedContexts: ["user"],
+    allowedContexts: ["user", "script"],
     /**
      * 
      * @param {execEnv} env
@@ -37,8 +37,11 @@ module.exports = {
             case "continue":
                 env.client.processes.get(env.server.id).continue(parseInt(args[2]));
                 break;
+            case "step":
+                let process = env.client.processes.get(env.server.id).processes.get(parseInt(args[2]));
+                process.interpreter.step(parseInt(args[3]));
+                break;
         }
-        return env;
     }
 }
 

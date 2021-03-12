@@ -11,6 +11,13 @@ module.exports = {
      */
     async execute(env, args)
     {
-        await env.interpreter.jump(env.interpreter.labels.get(args[1]));
+
+        let isRunning = env.interpreter.active;
+        env.interpreter.stop();
+        env.interpreter.awaitFullStop()
+            .then(() => {
+                env.interpreter.jump(env.interpreter.labels.get(args[1]));
+                if(isRunning)env.interpreter.run()
+            });
     }
 }

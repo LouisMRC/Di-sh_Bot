@@ -35,11 +35,10 @@ module.exports = {
                     case "context":
                         env.send(`ENV/CONTEXT: ${env.context}`);
                         break;
-                    case "exit":
-                        break;
-                    case "pause":
-                        break;
-
+                    case "pid":
+                        let pid = env.processID;
+                        env.send(`ENV/PID: ${pid}`);
+                        env.pipeOutput(pid);
                 }
                 break;
             case "ouput_handler":
