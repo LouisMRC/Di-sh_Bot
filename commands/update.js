@@ -4,6 +4,7 @@ module.exports = {
     name: 'update',
     description: 'update a message',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {ExecEnv} env

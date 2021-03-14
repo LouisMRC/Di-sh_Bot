@@ -7,6 +7,7 @@ const { commandFilter } = require("./contentFilters");
 const { sleep } = require("../../system/system");
 const { debug } = require("./../../debug");
 const EventEmitter = require("events");
+const { calculatePermissionLevel, checkPermissionLevel } = require("../../permission");
 
 class Interpreter extends EventEmitter
 {
@@ -85,14 +86,14 @@ class Interpreter extends EventEmitter
         if(this.m_Env.client.commands.has(Token.toString(instruction[0]).toLowerCase()))
         {
             const command = this.m_Env.client.commands.get(Token.toString(instruction[0]).toLowerCase());
-            if(command.allowedContexts.includes(this.m_Env.context))await command.execute(this.m_Env, prepareArgs(removeTokensByType(instruction, Types.EOL), this.m_Env));
+            if(command.allowedContexts.includes(this.m_Env.context) && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, command.permissionLevel))await command.execute(this.m_Env, prepareArgs(removeTokensByType(instruction, Types.EOL), this.m_Env));//temporary permission system for built-in commands
             else this.m_Env.send("ENV Error!!!").then(() => console.log("ENV ERROR!!!"));//hardcoded
         }
         else
         {
-            await this.m_Env.connection.query("SELECT Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
+            await this.m_Env.connection.query("SELECT Script, Permission_level FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
             .then(async row => {
-                if(row.length)this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));
+                if(row.length && checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));
                     // await (new Interpreter(row[0].Script, createScriptEnv(this.m_Env.copy()), [Token.toString(instruction[0]).toLowerCase()])).run();        
             })
             .catch(console.error);

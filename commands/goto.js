@@ -4,6 +4,7 @@ module.exports = {
     name: 'goto',
     description: 'goto label',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

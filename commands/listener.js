@@ -6,6 +6,7 @@ module.exports = {
     name: 'listener',
     description: '',
     allowedContexts: ["user", "script"],
+    permissionLevel: 2,
     /**
      * 
      * @param {execEnv} env

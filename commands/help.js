@@ -4,6 +4,7 @@ module.exports = {
     name: 'help',
     description: 'the documentation for the bot',
     allowedContexts: ["user"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

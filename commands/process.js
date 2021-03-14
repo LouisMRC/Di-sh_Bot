@@ -7,6 +7,7 @@ module.exports = {
     name: 'process',
     description: 'manage processes on the server',
     allowedContexts: ["user", "script"],
+    permissionLevel: 0,
     /**
      * 
      * @param {execEnv} env

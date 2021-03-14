@@ -6,6 +6,7 @@ module.exports = {
     name: 'env',
     description: 'env variables',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

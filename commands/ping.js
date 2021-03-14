@@ -4,6 +4,7 @@ module.exports = {
     name: 'ping',
     description: 'pong ;)',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {ExecEnv} env

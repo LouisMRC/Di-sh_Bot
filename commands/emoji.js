@@ -5,6 +5,7 @@ module.exports = {
     name: 'emoji',
     description: 'emoji commands',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

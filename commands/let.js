@@ -4,6 +4,7 @@ module.exports = {
     name: 'let',
     description: 'create a variable',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

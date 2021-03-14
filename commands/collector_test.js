@@ -5,6 +5,7 @@ module.exports = {
     name: 'collector_test',
     description: 'test the script editor',
     allowedContexts: ["user"],
+    permissionLevel: 3,
     /**
      * 
      * @param {execEnv} env 

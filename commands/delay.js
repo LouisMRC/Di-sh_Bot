@@ -4,6 +4,7 @@ module.exports = {
     name: 'delay',
     description: 'a simple delay',
     allowedContexts: ["script", "user"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

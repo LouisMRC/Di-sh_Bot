@@ -1,3 +1,4 @@
+const ExecEnv = require("../di-sh/interpreter/execEnv");
 const ServerConf = require("./serverConfig");
 
 /**
@@ -35,14 +36,15 @@ async function dbAddServer(connection, serverID)
  * @param {string} scriptName 
  * @param {Array<string>} script 
  */
-async function saveScript(connection, env, scriptName, script)
+async function saveScript(env, scriptName, script)
 {
-    if((await connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
+    if((await env.connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
     {
-        await connection.query("UPDATE scripts SET Script=? Where Server_ID=? AND Script_name=?;", [JSON.stringify(script), env.server.id, scriptName]);
+        await env.connection.query("UPDATE scripts SET Script=? Where Server_ID=? AND Script_name=?;", [JSON.stringify(script), env.server.id, scriptName]);
     }
-    else await connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
+    else await env.connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
 }
+
 
 module.exports = {
     getServer,

@@ -4,6 +4,7 @@ module.exports = {
     name: 'react',
     description: 'add a reaction as the robot',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

@@ -5,6 +5,7 @@ module.exports = {
     name: 'time',
     description: 'juste in time',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

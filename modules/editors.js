@@ -166,7 +166,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             script.name = newName;
                             collectorEnabled = true;
                         }
-                        await saveScript(connection, env, script.name, script.read());
+                        await saveScript(env, script.name, script.read());
                         saved = true;
                         editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                         message.delete();

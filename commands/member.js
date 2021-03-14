@@ -4,6 +4,7 @@ module.exports = {
     name: 'member',
     description: '',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env
@@ -12,6 +13,5 @@ module.exports = {
     async execute(env, args)
     {
         
-        return env;
     }
 }

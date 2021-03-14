@@ -4,6 +4,7 @@ module.exports = {
     name: 'label',
     description: 'env variables',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

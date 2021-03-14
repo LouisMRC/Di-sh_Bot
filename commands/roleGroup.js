@@ -8,6 +8,7 @@ module.exports = {
     name: 'role-group',
     description: 'role-group commands',
     allowedContexts: ["user", "script"],
+    permissionLevel: 0,
     /**
      * 
      * @param {ExecEnv} env

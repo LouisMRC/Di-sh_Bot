@@ -1,10 +1,12 @@
 const execEnv = require("../modules/di-sh/interpreter/execEnv");
-const { calculatePermissionLevel } = require("../modules/permission");
+const { isUserMention, getUserID, getRoleID, isRoleMention } = require("../modules/mention");
+const { calculatePermissionLevel, updateUserPermissionLevel, updateRolePermissionLevel } = require("../modules/permission");
 
 module.exports = {
     name: 'permission',
     description: 'manage permissions',
     allowedContexts: ["user", "script"],
+    permissionLevel: 0,
     /**
      * 
      * @param {execEnv} env
@@ -15,7 +17,15 @@ module.exports = {
         switch(args[1])
         {
             case "calc":
-                env.send(await calculatePermissionLevel(env, env.user.id));
+                let id = args.length === 3 && isUserMention(args[2]) ? getUserID(args[2]) : env.user.id;
+                let permission = await calculatePermissionLevel(env, id);
+                env.send(permission);
+                env.pipeOutput(permission);
+                break;
+            case "update":
+                if(isRoleMention(args[2]))updateRolePermissionLevel(env, getRoleID(args[2]), parseInt(args[3]));
+                else updateUserPermissionLevel(env, getUserID(args[2]), parseInt(args[3]));
+                break;
         }
     }
 }

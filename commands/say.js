@@ -4,6 +4,7 @@ module.exports = {
     name: 'say',
     description: 'say something as the robot',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {ExecEnv} env

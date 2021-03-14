@@ -6,6 +6,7 @@ module.exports = {
     name: 'role_exist',
     description: 'check if a role exist',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env

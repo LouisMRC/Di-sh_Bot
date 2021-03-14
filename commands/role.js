@@ -5,6 +5,7 @@ module.exports = {
     name: 'role',
     description: 'some usefull commands to manipulate roles',
     allowedContexts: ["user", "script"],
+    permissionLevel: 5,
     /**
      * 
      * @param {execEnv} env
