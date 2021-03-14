@@ -15,7 +15,7 @@ module.exports = class ExecEnv
      * @param {User} user 
      * @param {string} context 
      */
-    constructor(client, connection, server, serverConfig, serverLocale, channel, user, context)
+    constructor(client, connection, server, serverConfig, serverLocale, channel, user, context, exeDepth)
     {
         this.m_Client = client;
         this.m_Connection = connection;
@@ -29,6 +29,7 @@ module.exports = class ExecEnv
         this.m_Pipe = null;
         this.m_Interpreter = null;
         this.m_OutputManager = new OutputManager(new ChannelOutput(null));
+        this.m_ExeDepth = exeDepth;
     }
     copy()
     {
@@ -97,6 +98,11 @@ module.exports = class ExecEnv
     {
         return this.m_OutputManager;
     }
+    get exeDepth()
+    {
+        return this.m_ExeDepth;
+    }
+
 
 
     set server(server)
@@ -130,5 +136,9 @@ module.exports = class ExecEnv
     set interpreter(interpreter)
     {
         this.m_Interpreter = interpreter;
+    }
+    set exeDepth(exeDepth)
+    {
+        this.m_ExeDepth = exeDepth;
     }
 }

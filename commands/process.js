@@ -1,4 +1,5 @@
 const { ReactionEmoji } = require("discord.js");
+const { Pages } = require("../modules/dataStruct");
 const execEnv = require("../modules/di-sh/interpreter/execEnv");
 const { killProcess } = require("../modules/di-sh/interpreter/interpreter");
 
@@ -17,10 +18,22 @@ module.exports = {
         {
             case "list":
                 let processesManager = env.client.processes.get(env.server.id);
-                let processList = "Processes:";
+                let listHeader = `${processesManager.processes.size} Processes`;//hardcoded
+                let processList = "";
+                let activeProcesses = 0;
+                let processes = new Pages(10);
                 processesManager.processes.forEach((process, key) => {
-                    processList += `\n${key}  ${process.name}  ${process.interpreter.env.user}${key === env.processID ? "  (current)" : ""}`;
+                    let processData = {pid: key, pname: process.name, active: process.interpreter.active, user: process.interpreter.env.user};
+                    if(processData.active)activeProcesses++;
+                    processes.push(processData);
                 });
+                listHeader += `\n${activeProcesses} Active Processes`;//hardcoded
+                listHeader += `\n\nPage ${"0"} of ${processes.length}`;//hardcoded
+                for(let process of processes.getPage(0))//hardcoded
+                {
+                    processList += `${processList.length ? "\n" : ""}pid: ${process.pid}; name: ${process.pname}; user: ${process.user}; active: ${process.active}`;//hardcoded
+                }
+                env.send(listHeader);
                 env.send(processList);
                 break;
             case "spawn":

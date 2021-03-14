@@ -2,7 +2,7 @@ const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'goto',
-    description: 'env variables',
+    description: 'goto label',
     allowedContexts: ["user", "script"],
     /**
      * 

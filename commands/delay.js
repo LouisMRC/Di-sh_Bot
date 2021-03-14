@@ -3,7 +3,7 @@ const { sleep } = require("../modules/system/system");
 module.exports = {
     name: 'delay',
     description: 'a simple delay',
-    allowedContexts: ["script"],
+    allowedContexts: ["script", "user"],
     /**
      * 
      * @param {execEnv} env
