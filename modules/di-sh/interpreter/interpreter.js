@@ -93,8 +93,8 @@ class Interpreter extends EventEmitter
         {
             await this.m_Env.connection.query("SELECT Script, Permission_level FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
             .then(async row => {
-                if(row.length && checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));
-                    // await (new Interpreter(row[0].Script, createScriptEnv(this.m_Env.copy()), [Token.toString(instruction[0]).toLowerCase()])).run();        
+                if(row.length && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))
+                    this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));     
             })
             .catch(console.error);
         }
