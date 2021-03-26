@@ -32,6 +32,7 @@ pool.getConnection()
         Client.once("ready", () => console.log("Let's Go!!!"));
 
         Client.on("message", async (message) => {
+            await checkConnection();
             let env = await createUserTermEnv(Client, connection, message);
             let script = prepareScript(env, message.content);
             if(script.length)spawnProcess(env, script[0].toLowerCase(), script);
@@ -41,6 +42,7 @@ pool.getConnection()
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
             if(newMessage.editedAt !== null && ((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
             {
+                await checkConnection();
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 let script = prepareScript(env, newMessage.content);
                 if(script.length)spawnProcess(env, script[0].toLowerCase(), script);
@@ -53,4 +55,15 @@ pool.getConnection()
         });
         
         Client.login(token);
+
+
+        async function checkConnection()
+        {
+            await connection.ping()
+                .catch(async () => {
+                    connection = await pool.getConnection();
+                });
+        }
     }).catch(err => console.error(err));
+
+
