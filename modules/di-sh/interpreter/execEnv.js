@@ -14,8 +14,9 @@ module.exports = class ExecEnv
      * @param {TextChannel} channel
      * @param {User} user 
      * @param {string} context 
+     * @param {Array<string>} exeStack 
      */
-    constructor(client, connection, server, serverConfig, serverLocale, channel, user, context, exeDepth)
+    constructor(client, connection, server, serverConfig, serverLocale, channel, user, context, exeStack)
     {
         this.m_Client = client;
         this.m_Connection = connection;
@@ -29,11 +30,11 @@ module.exports = class ExecEnv
         this.m_Pipe = null;
         this.m_Interpreter = null;
         this.m_OutputManager = new OutputManager(new ChannelOutput(null));
-        this.m_ExeDepth = exeDepth;
+        this.m_ExeStack = exeStack;
     }
     copy()
     {
-        return new ExecEnv(this.m_Client, this.m_Connection, this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context)
+        return new ExecEnv(this.m_Client, this.m_Connection, this.m_Server, this.m_ServerConfig, this.m_ServerLocale, this.m_CurrentChannel, this.m_User, this.m_Context, this.m_ExeStack)
     }
 
     async send(content, targetID = 0)
@@ -48,6 +49,11 @@ module.exports = class ExecEnv
     pipeOutput(value)
     {
         this.m_Pipe = value;
+    }
+
+    pushCommand(command)
+    {
+        this.m_ExeStack.push(command);
     }
 
     get client()
@@ -98,9 +104,9 @@ module.exports = class ExecEnv
     {
         return this.m_OutputManager;
     }
-    get exeDepth()
+    get exeStack()
     {
-        return this.m_ExeDepth;
+        return this.m_ExeStack;
     }
 
 
@@ -137,8 +143,8 @@ module.exports = class ExecEnv
     {
         this.m_Interpreter = interpreter;
     }
-    set exeDepth(exeDepth)
+    set exeStack(exeStack)
     {
-        this.m_ExeDepth = exeDepth;
+        this.m_ExeStack = exeStack;
     }
 }

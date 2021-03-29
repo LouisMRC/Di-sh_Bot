@@ -16,6 +16,5 @@ module.exports = {
         if(args.length > 2)message = await env.server.channels.cache.get(args[1]).send(args[2]);
         else message = (await env.send(args[1])).get(0)[0];
         env.pipeOutput(message.id);
-        return env;
     }
 }

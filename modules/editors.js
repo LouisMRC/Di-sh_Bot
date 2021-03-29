@@ -5,6 +5,7 @@ const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
 const { saveScript } = require("./system/db");
 const { commandFilter, startWithPrefix } = require("./di-sh/interpreter/contentFilters");
+const { spawnProcess, createScriptEnv } = require("./di-sh/interpreter/interpreter");
 
 class EditorBuffer
 {
@@ -184,7 +185,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             case "exe":
                             case "exec":
                             case "execute":
-                                interpretScript(client, connection, env, commandFilter(env.serverConfig.getPrefix(), script.read(), false));
+                                spawnProcess(createScriptEnv(env.copy()), env.processID, script.name + " test", script.read());//hardcoded process name
                                 break;
 
                             case "insert":

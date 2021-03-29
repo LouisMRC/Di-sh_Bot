@@ -24,7 +24,7 @@ module.exports = {
                 let activeProcesses = 0;
                 let processes = new Pages(10);
                 processesManager.processes.forEach((process, key) => {
-                    let processData = {pid: key, pname: process.name, active: process.interpreter.active, user: process.interpreter.env.user};
+                    let processData = {pid: key, pname: process.name, user: process.interpreter.env.user, nchilds: process.childs().length, active: process.interpreter.active};
                     if(processData.active)activeProcesses++;
                     processes.push(processData);
                 });
@@ -32,7 +32,7 @@ module.exports = {
                 listHeader += `\n\nPage ${"0"} of ${processes.length}`;//hardcoded
                 for(let process of processes.getPage(0))//hardcoded
                 {
-                    processList += `${processList.length ? "\n" : ""}pid: ${process.pid}; name: ${process.pname}; user: ${process.user}; active: ${process.active}`;//hardcoded
+                    processList += `${processList.length ? "\n" : ""}pid: ${process.pid}; name: ${process.pname}; user: ${process.user}; childs: ${process.nchilds} ; active: ${process.active}`;//hardcoded
                 }
                 env.send(listHeader);
                 env.send(processList);
@@ -46,7 +46,9 @@ module.exports = {
                 env.pipeOutput(await awaitProcess(env, parseInt(args[2])));
                 break;
             case "stop":
-                env.client.processes.get(env.server.id).stop(parseInt(args[2]));
+                var PID = parseInt(args[2]);
+                var processManager = env.client.processes.get(env.server.id);
+                if(processManager.has(PID))processManager.stop(PID);
                 break;
             case "continue":
                 env.client.processes.get(env.server.id).continue(parseInt(args[2]));

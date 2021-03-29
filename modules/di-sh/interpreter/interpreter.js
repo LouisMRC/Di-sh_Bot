@@ -91,10 +91,15 @@ class Interpreter extends EventEmitter
         }
         else
         {
-            await this.m_Env.connection.query("SELECT Script, Permission_level FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, Token.toString(instruction[0]).toLowerCase()])
+            let scriptName = Token.toString(instruction[0]).toLowerCase();
+            await this.m_Env.connection.query("SELECT Script, Permission_level FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, scriptName])
             .then(async row => {
                 if(row.length && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))
-                    this.m_Env.pipeOutput(await spawnProcess(createScriptEnv(this.m_Env.copy()), Token.toString(instruction[0]).toLowerCase(), row[0].Script));     
+                {
+                    let scriptEnv = createScriptEnv(this.m_Env.copy());
+                    scriptEnv.pushCommand(scriptName);
+                    this.m_Env.pipeOutput(await spawnProcess(scriptEnv, this.m_Env.processID, scriptName, row[0].Script));     
+                }
             })
             .catch(console.error);
         }
@@ -125,7 +130,7 @@ class Interpreter extends EventEmitter
 async function createUserTermEnv(client, connection, message)
 {
     let conf = await getServer(connection, message.guild.id, true)
-    return new ExecEnv(client, connection, message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user");
+    return new ExecEnv(client, connection, message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user", []);
 }
 
 /**
@@ -183,22 +188,46 @@ class ProcessManager
     {
         this.m_Processes = new Map();
         this.m_InputQueue = [];
+        this.nextPID = 0;
         this.requestHandler();
     }
 
-
-    spawn(env, name, script)
+    /**
+     * 
+     * @param {ExecEnv} env 
+     * @param {number} parent 
+     * @param {string} name 
+     * @param {*} script 
+     */
+    spawn(env, parent, name, script)
     {
-        let newProcess = new Process(env, name, script);
+        let parentProcess = null;
+        if(parent !== null)
+        {
+            parentProcess = this.m_Processes.get(parent);
+            if(parentProcess.childs().length >= 10 || env.exeStack.length >= 10)
+            {
+                this.kill(this.getRootProcess(parent));
+                return;
+            }
+        }
+        let newProcess = new Process(env, parent, name, script);
         let pidPromise = new Promise(resolve => {
-            newProcess.once("activated", pid => resolve(pid));
+            newProcess.once("activated", pid => {
+                if(parent !== null)parentProcess.addChild(pid);
+                resolve(pid);
+            });
         });
         this.m_InputQueue.push(newProcess);
         return pidPromise;
     }
+
+
     kill(processID)
     {
-        this.m_Processes.get(processID).interpreter.stop();
+        let process = this.m_Processes.get(processID);
+        process.interpreter.stop();
+        for(let child of process.childs())this.kill(child);
         this.m_Processes.delete(processID);
     }
 
@@ -216,10 +245,16 @@ class ProcessManager
      */
     launchProcess(process)
     {
-        let id = 0;
-        while(this.m_Processes.has(id))id++;
-        process.interpreter.once("terminated", code => {
-            this.m_Processes.delete(id);
+        let id = this.nextPID++;
+        process.interpreter.once("terminated", async code => {
+            while(this.m_Processes.has(id) && this.m_Processes.get(id).childs().length)await sleep(100);
+            
+            if(this.m_Processes.has(id))
+            {
+                let parentPID = this.m_Processes.get(id).parent;
+                if(parentPID !== null)this.m_Processes.get(parentPID).removeChild(id);
+                this.m_Processes.delete(id);
+            }
         });
         process.interpreter.env.processID = id;
         this.m_Processes.set(id, process);
@@ -233,6 +268,12 @@ class ProcessManager
             await sleep(100);
             while(this.m_InputQueue.length > 0)this.launchProcess(this.m_InputQueue.shift());
         }
+    }
+
+    getRootProcess(pid)
+    {
+        if(pid === null || this.m_Processes.get(pid).parent === null)return pid;
+        return this.getRootProcess(this.m_Processes.get(pid).parent);
     }
 
     get processes()
@@ -249,11 +290,27 @@ class Process extends EventEmitter
      * @param {Array<string>} script 
      * @param {string} name 
      */
-    constructor(env, name, script)
+    constructor(env, parent, name, script)
     {
         super();
         this.m_Name = name;
         this.m_Interpreter = new Interpreter(script, env, []);
+        this.m_parent = parent;//parent pid
+        this.m_childProcesses = [];//child pids
+    }
+    addChild(childPID)
+    {
+        this.m_childProcesses.push(childPID);
+    }
+    removeChild(childPID)
+    {
+        let index = this.m_childProcesses.indexOf(childPID);
+        if(index < 0)return;
+        this.m_childProcesses.splice(index, 1);
+    }
+    childs()
+    {
+        return this.m_childProcesses;
     }
     get name()
     {
@@ -262,6 +319,10 @@ class Process extends EventEmitter
     get interpreter()
     {
         return this.m_Interpreter;
+    }
+    get parent()
+    {
+        return this.m_parent;
     }
 
     set name(newName)
@@ -276,10 +337,10 @@ class Process extends EventEmitter
  * @param {Array<string>} script 
  * @param {string} name 
  */
-function spawnProcess(env, name, script)
+function spawnProcess(env, parent, name, script)
 {
     if(!env.client.processes.has(env.server.id))env.client.processes.set(env.server.id, new ProcessManager());
-    return env.client.processes.get(env.server.id).spawn(env, name, script);
+    return env.client.processes.get(env.server.id).spawn(env, parent, name, script);
 }
 
 function killProcess(env, processID)
@@ -294,6 +355,7 @@ module.exports = {
     Interpreter,
 
     createUserTermEnv,
+    createScriptEnv,
     prepareScript,
     prepareArgs,
 

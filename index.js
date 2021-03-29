@@ -35,7 +35,7 @@ pool.getConnection()
             await checkConnection();
             let env = await createUserTermEnv(Client, connection, message);
             let script = prepareScript(env, message.content);
-            if(script.length)spawnProcess(env, script[0].toLowerCase(), script);
+            if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);
             if(isUserMention(message.content) && getUserID(message.content) === Client.user.id)message.reply(languages.get(env.serverConfig.getLanguage()).help_dialog.replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()));
         });
 
@@ -45,7 +45,7 @@ pool.getConnection()
                 await checkConnection();
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 let script = prepareScript(env, newMessage.content);
-                if(script.length)spawnProcess(env, script[0].toLowerCase(), script);
+                if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);
                 if(isUserMention(newMessage.content) && getUserID(newMessage.content) === Client.user.id)newMessage.reply(languages.get(env.serverConfig.getLanguage()).help_dialog.replace("$prefix", env.serverConfig.getPrefix()).replace("$prefix", env.serverConfig.getPrefix()));
             }
         })
