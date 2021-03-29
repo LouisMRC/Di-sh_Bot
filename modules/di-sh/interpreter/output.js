@@ -5,34 +5,45 @@ class OutputManager
 {
     constructor(defaultOutput)
     {
-        this.m_OutputTargets = [defaultOutput];
+        this.m_OutputTargets = new Map();
+        this.m_OutputTargets.set(0, defaultOutput);//Target0 -> default output
+        this.m_NextOutputID = 1;
     }
     async send(outputContent, env, outputID = 0)//send the ouput to the selected ouput buffer(outputID, -1:all)
     {
         let outputs = new Map();
         if(outputID === -1)
         {
-            for(let i = 0; i < this.m_OutputTargets.length; i++)
-                outputs.set(i, await target.send(outputContent, env));
+            for(let target of this.m_OutputTargets)
+                outputs.set(target[0], await target[1].send(outputContent, env));
         }
-        else outputs.set(outputID, await this.m_OutputTargets[outputID].send(outputContent, env));
+        else outputs.set(outputID, await this.m_OutputTargets.get(outputID).send(outputContent, env));
         return outputs;
     }
     async display(env, outputID = 0)
     {
         let outputs = new Map();
-        if(outputID === -1)for(let i = 0; i < this.m_OutputTargets.length; i++)outputs.set(i, await this.m_OutputTargets[i].display(env));
-        else outputs.set(outputID, await this.m_OutputTargets[outputID].display(env));
+        if(outputID === -1)for(let target of this.m_OutputTargets)outputs.set(target[0], await target[1].display(env));
+        else outputs.set(outputID, await this.m_OutputTargets.get(outputID).display(env));
         return outputs;
     }
 
     add(newOutputTarget)
     {
-        this.m_OutputTargets.push(newOutputTarget);
+        this.m_OutputTargets.set(this.m_NextOutputID++, newOutputTarget);
     }
     remove(id)
     {
-        this.m_OutputTargets.splice(id, 1);
+        this.m_OutputTargets.delete(id);
+    }
+    setDefault(targetID)
+    {
+        this.m_OutputTargets.set(0, this.m_OutputTargets.get(targetID));
+        this.m_OutputTargets.delete(targetID);
+    }
+    get outputTargets()
+    {
+        return this.m_OutputTargets;
     }
 }
 
@@ -96,7 +107,7 @@ class ConsoleOutput extends BasicOutput
 }
 class FileOutput extends BasicOutput
 {
-    constructor(ouputTarget, direct = true)
+    constructor(ouputTarget, direct = false)
     {
         super(ouputTarget, direct);
     }

@@ -7,6 +7,7 @@ const { commandFilter } = require("./contentFilters");
 const { sleep } = require("../../system/system");
 const { debug } = require("./../../debug");
 const EventEmitter = require("events");
+const { ChannelOutput } = require("./output")
 const { calculatePermissionLevel, checkPermissionLevel } = require("../../permission");
 
 class Interpreter extends EventEmitter
@@ -17,20 +18,20 @@ class Interpreter extends EventEmitter
      * @param {ExecEnv} env 
      * @param {Array<string>} argv 
      */
-    constructor(script, env, argv)
+    constructor(script, env, interpreterArgv, scriptArgv)
     {
         super();
         this.m_Script = parse(tokenize(script));
         this.m_Env = env;
-        this.m_InterpreterArgv;
-        this.m_ScriptArgv;
+        this.m_InterpreterArgv = {logChannel: null};
+        this.m_ScriptArgv = scriptArgv;
         this.m_Cursor = 0;
         this.m_Active = false;
         this.m_Running = false;
         this.m_Terminated = false;
         this.m_Labels = new Map();
 
-        // this.m_LogOutput;
+        this.m_LogOutput = (this.m_InterpreterArgv.logChannel === null ? null : new ChannelOutput(this.m_InterpreterArgv.logChannel));
 
         this.m_Env.interpreter = this;
     }
@@ -174,7 +175,7 @@ function prepareArgs(tokens, env)
             arg = [];
         }
         else if(token.type === Types.PIPE)args.push(env.pipe);
-        else arg.push(Token.toString(token));
+        else arg.push(Token.toString(token, false));
     }
     if(arg.length)args.push(Token.toString(arg, false));
     return args;
@@ -197,7 +198,7 @@ class ProcessManager
      * @param {ExecEnv} env 
      * @param {number} parent 
      * @param {string} name 
-     * @param {*} script 
+     * @param {Array<string>} script 
      */
     spawn(env, parent, name, script)
     {

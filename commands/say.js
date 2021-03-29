@@ -1,4 +1,5 @@
 const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
+const { isOption } = require("../modules/cliFuncs");
 
 module.exports = {
     name: 'say',
@@ -12,9 +13,26 @@ module.exports = {
      */
     async execute(env, args)
     {
-        let message;
-        if(args.length > 2)message = await env.server.channels.cache.get(args[1]).send(args[2]);
-        else message = (await env.send(args[1])).get(0)[0];
-        env.pipeOutput(message.id);
+        let options = {ping: true, output: 0, message: ""}//default options(ping: mentions->true, default output(0))
+        
+        for(let i = 1; i < args.length; i++)
+        {
+            switch(args[i])
+            {
+                case "--noping":
+                case "-p":
+                    options.ping = false;
+                    break;
+                case "--output":
+                case "-o":
+                    if(i+1 < args.length && !isNaN(args[i+1]))options.output = parseInt(args[++i]);
+                    break;
+                default:
+                    if(options.message === "")options.message = args[i];
+            }
+        }
+        console.log(options);
+        if(!options.message.length)return;
+        env.pipeOutput((await env.send(options.message, options.output)).get(0)[0].id);
     }
 }

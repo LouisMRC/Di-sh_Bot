@@ -40,9 +40,10 @@ module.exports = {
                         let pid = env.processID;
                         env.send(`ENV/PID: ${pid}`);
                         env.pipeOutput(pid);
+                        break;
                 }
                 break;
-            case "ouput_handler":
+            case "output_handler":
                 switch(args[2].toLowerCase())
                 {
                     case "add":
@@ -62,9 +63,17 @@ module.exports = {
                         break;
                     case "remove":
                         break;
+                    case "list":
+                        let line = "OutputTargets:";
+                        for(let i = 0; i < env.outputManager.outputTargets.length; i++)
+                        {
+                            line += `\nid: ${i}, type: ${env.outputManager.outputTargets[i].constructor.name}`;
+                        }
+                        env.send(line);
+                        break;
                 }
                 break;
+            default: break;
         }
-        return env;
     }
 }

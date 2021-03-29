@@ -24,10 +24,10 @@ class Token
             {
                 case "Array":
                     let strVal = "";
-                    for(let element of obj)strVal += (((strVal.length !== 0 && withSpace) ? " " : "") + Token.toString(element));
+                    for(let element of obj)strVal += (((strVal.length !== 0 && withSpace) ? " " : "") + Token.toString(element, false));
                     return strVal;
                 case "Token":
-                    return Token.toString(obj.value);
+                    return Token.toString(obj.value, false);
                     break;
             }
         }
@@ -252,7 +252,7 @@ function removeTokensByType(tokens, tokenType)
 
 /**
  * 
- * @param {Array<Array<Token>>} script 
+ * @param {Array<Array<Token>>} script
  */
 function searchMention(script)
 {
@@ -293,7 +293,7 @@ function searchExpr(script)
         for(let j = 0; j < line.length; j++)
         {
             const token = line[j];
-            if([Types.STRING, Types.NUMBER, Types.IDENTIFIER].includes(token.type))
+            if([Types.MINUS, Types.STRING, Types.NUMBER, Types.IDENTIFIER].includes(token.type))
             {
                 let expr = [token];
                 let k = j + 1;
