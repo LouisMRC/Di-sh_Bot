@@ -1,4 +1,5 @@
 const ExecEnv = require("../di-sh/interpreter/execEnv");
+const { parseConf } = require("./config");
 const ServerConf = require("./serverConfig");
 
 /**
@@ -45,10 +46,33 @@ async function saveScript(env, scriptName, script)
     else await env.connection.query("INSERT INTO scripts (Server_ID, Script_name, Script) VALUES (?, ?, ?);", [env.server.id, scriptName, JSON.stringify(script)]);
 }
 
+/**
+ * 
+ * @param {ExecEnv} env 
+ * @param {string} name 
+ */
+async function getConfig(env, name)
+{
+    let rows = await env.connection.query("SELECT Server_ID, Config_name, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name=?;", [env.server.id, name]);
+    for(let row of rows)if(row.Server_ID === env.server.id)return parseConf(JSON.parse(row.Data));
+    return parseConf(JSON.parse(rows[0].Data));
+}
+async function updateConfig(env, name, config)
+{
+    if((await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=? AND Config_name=?;", [env.server.id, name])).length)
+    {
+        await env.connection.query("UPDATE configs SET Data=? Where Server_ID=? AND Config_name=?;", [JSON.stringify(config), env.server.id, name]);
+    }
+    else await env.connection.query("INSERT INTO configs (Server_ID, Config_name, Data) VALUES (?, ?, ?);", [env.server.id, name, JSON.stringify(config)]);  
+}
+
 
 module.exports = {
     getServer,
     dbAddServer,
 
-    saveScript
+    saveScript,
+    
+    getConfig,
+    updateConfig
 }

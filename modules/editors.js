@@ -3,9 +3,11 @@ const { multiline_codeblock } = require("./textDecorations");
 const { digitOnly } = require("./string");
 const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
-const { saveScript } = require("./system/db");
+const { saveScript, updateConfig } = require("./system/db");
 const { commandFilter, startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 const { spawnProcess, createScriptEnv } = require("./di-sh/interpreter/interpreter");
+const { stringifyConf } = require("./system/config");
+const { removeQuote } = require("./textTransformations");
 
 class EditorBuffer
 {
@@ -38,12 +40,7 @@ class EditorBuffer
     }
     applyOld()
     {
-        let i = 0;
-        while(this.m_Undo.length >= 30)
-        {
-            this.m_Content = EditorBuffer.apply(this.m_Content, this.m_Undo.splice(0, 1));
-            i++;
-        }
+        while(this.m_Undo.length >= 30) this.m_Content = EditorBuffer.apply(this.m_Content, this.m_Undo.splice(0, 1));
     }
     static apply(content, actions)
     {
@@ -62,6 +59,59 @@ class EditorBuffer
         return this.m_Name;
     }
 }
+
+class ObjEditorBuffer
+{
+    /**
+     * 
+     * @param {string} name 
+     * @param {Map<string, string>} content 
+     */
+    constructor(name, content)
+    {
+        this.m_Name = name;
+        this.m_Content = content;
+        this.m_Undo = [];
+        this.m_Redo = [];
+    }
+    write(actions)
+    {
+        this.m_Undo.push(actions);
+        this.m_Redo = [];
+    }
+    undo()
+    {
+        if(this.m_Undo.length)this.m_Redo.push(this.m_Undo.pop());
+    }
+    redo()
+    {
+        if(this.m_Redo.length)this.m_Undo.push(this.m_Redo.pop());
+    }
+    read()
+    {
+        return ObjEditorBuffer.apply(this.m_Content, this.m_Undo);
+    }
+    applyOld()
+    {
+        while(this.m_Undo.length >= 30) this.m_Content = ObjEditorBuffer.apply(this.m_Content, this.m_Undo.splice(0, 1));
+    }
+    static apply(content, actions)
+    {
+        let updatedContent = new Map(content);
+        for(let action of actions)updatedContent.set(action[0], action[1]);
+        return updatedContent;
+    }
+    has(key)
+    {
+        return this.m_Content.has(key);
+    }
+
+    get name()
+    {
+        return this.m_Name;
+    }
+}
+
 class EditorAction
 {
     constructor(pos, insert, line)
@@ -84,6 +134,7 @@ class EditorAction
     }
 }
 
+
 /**
  * 
  * @param {Array<string>} script 
@@ -100,6 +151,17 @@ function displayScript(script, withCursor, insert, cursorPos = 0)
 
 /**
  * 
+ * @param {Map} obj 
+ */
+ function displayObj(obj)
+ {
+     let editorDisplay = "";
+     for(let data of obj)editorDisplay += `${editorDisplay.length ? "\n" : ""}${data[0]} = "${data[1]}"`;
+     return multiline_codeblock(editorDisplay);
+ }
+
+/**
+ * 
  * @param {string} scriptName
  * @param {string} content 
  * @param {ExecEnv} env
@@ -109,19 +171,25 @@ function displayScript(script, withCursor, insert, cursorPos = 0)
  */
 function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "")
 {
+    let display = new MessageEmbed().setColor("BLUE");
+    
     let editorTitle = scriptName === null ? env.serverLocale.script_editor_title_new : env.serverLocale.script_editor_title.replace("$scriptName", scriptName);
     
-    let clipboardText = (clipboard.length ? "" : "...");
-    for(let i = 0; i < clipboard.length; i++)clipboardText += `${i ? "\n" : ""}${clipboard[i]}`;
-
     let editorWindow = content;
     editorWindow += saved === null ? "" : env.serverLocale.script_editor_save_indicator.replace("$isSaved", saved ? "█" : " ");
+    
     editorWindow += editorMsg;
+    display.addField(editorTitle, editorWindow);
 
-    return new MessageEmbed()
-                .setColor("BLUE")
-                .addField(editorTitle, editorWindow)
-                .addField("Clipboard:", multiline_codeblock(clipboardText));//hardcoded
+
+    if(clipboard !== null)
+    {
+        let clipboardText = (clipboard.length ? "" : "...");
+        for(let i = 0; i < clipboard.length; i++)clipboardText += `${i ? "\n" : ""}${clipboard[i]}`;
+        display.addField("Clipboard:", multiline_codeblock(clipboardText));//hardcoded
+    }
+
+    return display;            
 }
 
 /**
@@ -433,11 +501,88 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
     })
 }
 
+function configEditor(env, idleTimeout, configData = {name: null, data: new Map()})
+{
+    return new Promise((resolve, reject) => {
+        let config = new ObjEditorBuffer(configData.name, configData.data);
+        let saved = true;
+        env.channel.send(createDisplay(config.name, displayObj(config.read()), env, saved, null))
+            .then(editorWindow => {
+                let collectorEnabled = true;
+                const filter = msg => msg.author.id === env.user.id && collectorEnabled;
+                const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
+
+                collector.on("collect", async message => {
+                    if(startWithPrefix(env.serverConfig.getPrefix(), message.content))
+                    {
+                        const args = message.content.slice(env.serverConfig.getPrefix().length).split(" ");
+                        switch(args[0])
+                        {
+                            case "q":
+                            case "quit":
+                                collector.stop("close");
+                                break;
+
+                            case "s":
+                            case "save":
+                                console.log(stringifyConf(config.read()));
+                                await updateConfig(env, config.name, stringifyConf(config.read()));
+                                saved = true;
+                                break;
+
+                            case "z":
+                            case "undo":
+                                config.undo();
+                                saved = false;
+                                break;
+
+                            case "y":
+                            case "redo":
+                                config.redo();
+                                saved = false;
+                                break;
+                        }
+                        editorWindow.edit(createDisplay(config.name, displayObj(config.read()), env, saved, null));
+                        message.delete();
+                    }
+                    else if(!startWithPrefix(env.serverConfig.getPrefix(), message.content))
+                    {
+                        let editorMessage = "";
+                        let line = message.content
+                        if(line.includes("="))
+                        {
+                            let separatorIndex = line.indexOf("=");
+                            config.write([line.slice(0, separatorIndex).trim(), removeQuote(line.slice(separatorIndex+1).trim())]);
+                            saved = false;
+                        }
+                        else editorMessage = "Syntax Error!!!";//hardcoded
+                        message.delete();
+                        editorWindow.edit(createDisplay(config.name, displayObj(config.read()), env, saved, null, editorMessage));
+                    }
+                })
+        
+                collector.on("end", async (collected, reason) => {
+                    if(reason === "close")
+                    {
+                        resolve(reason);
+                    }
+                    else
+                    {
+                        reject(reason);
+                    }
+                });
+            });
+    })
+}
+
 module.exports = {
     EditorBuffer,
+    ObjEditorBuffer,
     EditorAction,
 
     displayScript,
+    displayObj,
     createDisplay,
-    scriptEditor
-}
+    scriptEditor,
+    configEditor
+};

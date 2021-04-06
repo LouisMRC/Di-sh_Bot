@@ -28,10 +28,10 @@ module.exports = {
                     if(i+1 < args.length && !isNaN(args[i+1]))options.output = parseInt(args[++i]);
                     break;
                 default:
-                    if(options.message === "")options.message = args[i];
+                    if(options.message === "")options.message += args[i];
+                    break;
             }
         }
-        console.log(options);
         if(!options.message.length)return;
         env.pipeOutput((await env.send(options.message, options.output)).get(0)[0].id);
     }

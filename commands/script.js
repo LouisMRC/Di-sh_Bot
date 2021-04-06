@@ -11,7 +11,7 @@ module.exports = {
     /**
     * 
     * @param {ExecEnv} env
-    * @param {Array} args 
+    * @param {Array<string>} args 
     */
     async execute(env, args)
     {

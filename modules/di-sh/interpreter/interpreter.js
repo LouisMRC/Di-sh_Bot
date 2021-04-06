@@ -25,7 +25,7 @@ class Interpreter extends EventEmitter
         this.m_Env = env;
         this.m_InterpreterArgv = {logChannel: null};
         this.m_ScriptArgv = scriptArgv;
-        this.m_Cursor = 0;
+        this.m_ProgrammCounter = 0;
         this.m_Active = false;
         this.m_Running = false;
         this.m_Terminated = false;
@@ -37,20 +37,20 @@ class Interpreter extends EventEmitter
     }
     step(steps)
     {
-        for(let i = 0; this.m_Cursor < this.m_Script.length && i < steps; i++)
+        for(let i = 0; this.m_ProgrammCounter < this.m_Script.length && i < steps; i++)
         {
-            this.execute(this.m_Script[this.m_Cursor]);
-            this.m_Cursor++;
+            this.execute(this.m_Script[this.m_ProgrammCounter]);
+            this.m_ProgrammCounter++;
         }
-        if(this.m_Cursor >= this.m_Script.length)this.emit("terminated", 0);
+        if(this.m_ProgrammCounter >= this.m_Script.length)this.emit("terminated", 0);
     }
     async run()
     {
         this.m_Active = true;
         this.m_Running = true;
-        while(this.m_Active && this.m_Cursor < this.m_Script.length)await this.execute(this.m_Script[this.m_Cursor++]);
+        while(this.m_Active && this.m_ProgrammCounter < this.m_Script.length)await this.execute(this.m_Script[this.m_ProgrammCounter++]);
         this.m_Running = false;
-        if(this.m_Cursor >= this.m_Script.length && this.m_Active)this.emit("terminated", 0);
+        if(this.m_ProgrammCounter >= this.m_Script.length && this.m_Active)this.emit("terminated", 0);
     }
     exit(code = 0)
     {
@@ -62,7 +62,7 @@ class Interpreter extends EventEmitter
     }
     jump(instructionNumber)
     {
-        this.m_Cursor = instructionNumber;
+        this.m_ProgrammCounter = instructionNumber;
     }
 
     async awaitFullStop()
@@ -72,7 +72,7 @@ class Interpreter extends EventEmitter
 
     createLabel(name)
     {
-        this.m_Labels.set(name, this.m_Cursor);
+        this.m_Labels.set(name, this.m_ProgrammCounter);
     }
 
     /**
