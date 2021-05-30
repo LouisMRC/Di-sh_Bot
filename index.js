@@ -3,9 +3,11 @@ const { isUserMention, getUserID } = require("./modules/mention");
 const Discord = require("discord.js");
 const Mariadb = require("mariadb");
 const { token, dbHost, dbName, dbUsername, dbUserPasswd } = require('./config.json');
-const { getServer } = require("./modules/system/db");
+const { getServer, checkConnection } = require("./modules/system/db");
 const { languages, loadLanguages } = require("./modules/lang");
-const { Interpreter, createUserTermEnv, prepareScript, spawnProcess } = require('./modules/di-sh/interpreter/interpreter');
+const { createUserTermEnv, prepareScript, spawnProcess } = require('./modules/di-sh/interpreter/interpreter');
+const { onStart } = require('./modules/system/autoExec');
+const ExecEnv = require('./modules/di-sh/interpreter/execEnv');
 
 
 const Client = new Discord.Client();
@@ -29,10 +31,20 @@ for(const file of fs.readdirSync('./commands').filter(file => file.endsWith('.js
 pool.getConnection()
     .then(async (connection) => {
         loadLanguages();
-        Client.once("ready", () => console.log("Let's Go!!!"));
+        Client.once("ready", async () => {
+            console.log("Let's Go!!!");
+            let servers = await connection.query("SELECT Server_ID FROM servers;");
+            for(let server of servers)
+            {
+                let conf = await getServer(connection, server.Server_ID, true);
+                let guild = await Client.guilds.fetch(server.Server_ID);
+                let env = new ExecEnv(Client, connection, guild, conf, conf.getLanguage, guild.systemChannel, {name: "su", id: "0"}, "script", []);
+                onStart(env);
+            }
+        });
 
         Client.on("message", async (message) => {
-            await checkConnection();
+            await checkConnection(pool, connection);
             let env = await createUserTermEnv(Client, connection, message);
             let script = prepareScript(env, message.content);
             if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);
@@ -42,7 +54,7 @@ pool.getConnection()
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
             if(newMessage.editedAt !== null && ((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
             {
-                await checkConnection();
+                await checkConnection(pool, connection);
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 let script = prepareScript(env, newMessage.content);
                 if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);
@@ -56,14 +68,6 @@ pool.getConnection()
         
         Client.login(token);
 
-
-        async function checkConnection()
-        {
-            await connection.ping()
-                .catch(async () => {
-                    connection = await pool.getConnection();
-                });
-        }
     }).catch(err => console.error(err));
 
 

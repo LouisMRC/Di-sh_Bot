@@ -39,6 +39,7 @@ async function dbAddServer(connection, serverID)
  */
 async function saveScript(env, scriptName, script)
 {
+    // checkConnection();
     if((await env.connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
     {
         await env.connection.query("UPDATE scripts SET Script=? Where Server_ID=? AND Script_name=?;", [JSON.stringify(script), env.server.id, scriptName]);
@@ -94,6 +95,14 @@ async function updateConfig(env, name, config)
      await env.connection.query("DELETE FROM config WHERE Server_ID=? AND Config_name=?;", [env.server.id, name]);//delete the custom configuration
  }
 
+ async function checkConnection(pool, connection)
+ {
+     await connection.ping()
+         .catch(async () => {
+             connection = await pool.getConnection();
+         });
+ }
+
 
 module.exports = {
     getServer,
@@ -104,5 +113,6 @@ module.exports = {
     getConfig,
     listConfigs,
     updateConfig,
-    resetConfig
+    resetConfig,
+    checkConnection
 }

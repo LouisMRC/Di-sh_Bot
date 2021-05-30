@@ -97,7 +97,8 @@ class Interpreter extends EventEmitter
             .then(async row => {
                 if(row.length && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))
                 {
-                    let scriptEnv = createScriptEnv(this.m_Env.copy());
+                    let scriptEnv = this.m_Env.copy();
+                    scriptEnv.context = "script";
                     scriptEnv.pushCommand(scriptName);
                     this.m_Env.pipeOutput(await spawnProcess(scriptEnv, this.m_Env.processID, scriptName, row[0].Script));     
                 }
@@ -138,10 +139,10 @@ async function createUserTermEnv(client, connection, message)
  * 
  * @param {ExecEnv} env 
  */
-function createScriptEnv(env)
+function createScriptEnv(client, connection, conf)
 {
-    env.context = "script";
-    return env;
+    // env.context = "script";
+    // return env;
 }
 
 /**

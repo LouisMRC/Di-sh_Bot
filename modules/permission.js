@@ -46,7 +46,7 @@ async function checkPermissionLevel(env, userID, minPermLevel)
  */
 async function getUserPermissionLevel(env, userID)
 {
-    if(userID === env.server.ownerID)return 0;
+    if(userID === env.server.ownerID || userID === "0")return 0;
     const row = await env.connection.query("SELECT Permission_level FROM user_permissions WHERE Server_ID=? AND User_ID=?;", [env.server.id, userID]);
     if(!row.length)return 5;//hardcoded
     return row[0].Permission_level;

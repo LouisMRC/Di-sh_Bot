@@ -4,7 +4,7 @@
  * 
  * @param {Array<Array<string>>} rawConf 
  */
-function parseConf(rawConf)
+function parseConf(rawConf)//array config -> map config
 {
     let conf = new Map();
     // console.log(rawConf);
