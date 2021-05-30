@@ -50,21 +50,49 @@ async function saveScript(env, scriptName, script)
  * 
  * @param {ExecEnv} env 
  * @param {string} name 
+ * @param {boolean} getDefault
  */
 async function getConfig(env, name)
 {
-    let rows = await env.connection.query("SELECT Server_ID, Config_name, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name=?;", [env.server.id, name]);
+    let rows = await env.connection.query("SELECT Server_ID, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name=?;", [env.server.id, name]);
     for(let row of rows)if(row.Server_ID === env.server.id)return parseConf(JSON.parse(row.Data));
     return parseConf(JSON.parse(rows[0].Data));
 }
+
+/**
+ * 
+ * @param {ExecEnv} env 
+ */
+async function listConfigs(env)//get a list of all the default configurations (where serverID=0)
+{
+    let configs = []
+    for(let config of await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=0;"))configs.push(config.Config_name);
+    return configs;
+}
+
+/**
+ * 
+ * @param {ExecEnv} env 
+ * @param {string} name 
+ * @param {string} config 
+ */
 async function updateConfig(env, name, config)
 {
-    if((await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=? AND Config_name=?;", [env.server.id, name])).length)
+    if((await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=? AND Config_name=?;", [env.server.id, name])).length)//check if the configuration is already in the db
     {
-        await env.connection.query("UPDATE configs SET Data=? Where Server_ID=? AND Config_name=?;", [JSON.stringify(config), env.server.id, name]);
+        await env.connection.query("UPDATE configs SET Data=? Where Server_ID=? AND Config_name=?;", [config, env.server.id, name]);//update the existing configuration
     }
-    else await env.connection.query("INSERT INTO configs (Server_ID, Config_name, Data) VALUES (?, ?, ?);", [env.server.id, name, JSON.stringify(config)]);  
+    else await env.connection.query("INSERT INTO configs (Server_ID, Config_name, Data) VALUES (?, ?, ?);", [env.server.id, name, config]);//create a new configuration
 }
+
+/**
+ * 
+ * @param {ExecEnv} env 
+ */
+ async function resetConfig(env, name)
+ {
+     await env.connection.query("DELETE FROM config WHERE Server_ID=? AND Config_name=?;", [env.server.id, name]);//delete the custom configuration
+ }
 
 
 module.exports = {
@@ -74,5 +102,7 @@ module.exports = {
     saveScript,
     
     getConfig,
-    updateConfig
+    listConfigs,
+    updateConfig,
+    resetConfig
 }

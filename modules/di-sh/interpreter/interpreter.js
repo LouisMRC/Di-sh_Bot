@@ -1,7 +1,7 @@
 const { parse, tokenize, Token, removeTokensByType, Types } = require("./parser");
 const ExecEnv = require("./execEnv");
 const { Message } = require("discord.js");
-const { getServer } = require("../../system/db");
+const { getServer, getConfig } = require("../../system/db");
 const { languages } = require("../../lang");
 const { commandFilter } = require("./contentFilters");
 const { sleep } = require("../../system/system");

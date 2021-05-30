@@ -1,10 +1,11 @@
 const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 const { configEditor } = require("../modules/editors");
-const { getConfig } = require("../modules/system/db");
+const { getConfig, resetConfig, listConfigs } = require("../modules/system/db");
+const { multiline_codeblock } = require("../modules/textDecorations");
 
 module.exports = {
     name: 'config',
-    description: 'edit configs',
+    description: 'manage bot configurations',
     allowedContexts: ["user", "script"],
     permissionLevel: 0,
     /**
@@ -22,8 +23,12 @@ module.exports = {
                     .catch(async () => await env.send("timeout"));
                 break;
             case "reset":
+                resetConfig(env, args[2].toLowerCase());
                 break;
             case "list":
+                let configs = "";
+                for(let config of await listConfigs(env))configs += (configs.length ? "\n-" : "-") + config;
+                env.send(multiline_codeblock(configs));
                 break;
             case "show":
                 break;
