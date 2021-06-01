@@ -19,8 +19,8 @@ function parseConf(rawConf)//array config -> map config
  function stringifyConf(conf)
  {
      let strConf = "";
-     for(let line of conf)strConf += (strConf.length ? "," : "")+JSON.stringify(line);
-     return `[${strConf}]`;
+     for(let line of conf)strConf += `${strConf.length ? "," : ""}[\\"${line[0]}\\",\\"${line[1]}\\"]`;
+     return `"[${strConf}]"`;
  }
 
 module.exports = {
