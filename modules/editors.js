@@ -176,7 +176,7 @@ function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "
     let editorTitle = scriptName === null ? env.serverLocale.script_editor_title_new : replace(env.serverLocale.script_editor_title, ["$scriptName"], [scriptName]);
     
     let editorWindow = content;
-    editorWindow += saved === null ? "" : "\n" + replace(env.serverLocale.editors_components_save_indicator, ["$isSaved"], [saved ? "█" : " "]);
+    editorWindow += saved === null ? "" : ("\n" + replace(env.serverLocale.editors_components_save_indicator, ["$isSaved"], [(saved ? "█" : " ")]));
     
     editorWindow += (editorMsg.length ? "\n" + editorMsg : "");
     display.addField(editorTitle, editorWindow);
@@ -373,7 +373,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         case 1:
                                             if(cursorPos < 0 || script.read().length < cursorPos)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "Error"))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -392,7 +392,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                             const line = parseInt(args[1])-1;
                                             if(line < 0 || script.read().length < line)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "Error"))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -414,7 +414,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         case 1:
                                             if(insert || cursorPos < 0 || script.read().length < cursorPos)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "Error"))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -430,7 +430,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                             const line = parseInt(args[1])-1;
                                             if(line < 0 || script.read().length < line)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "Error"))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }

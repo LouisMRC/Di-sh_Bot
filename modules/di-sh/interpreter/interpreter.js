@@ -1,7 +1,7 @@
 const { parse, tokenize, Token, removeTokensByType, Types } = require("./parser");
 const ExecEnv = require("./execEnv");
 const { Message } = require("discord.js");
-const { getServer, getConfig } = require("../../system/db");
+const { getGeneralConfig } = require("../../system/db");
 const { languages } = require("../../lang");
 const { commandFilter } = require("./contentFilters");
 const { sleep } = require("../../system/system");
@@ -131,7 +131,7 @@ class Interpreter extends EventEmitter
  */
 async function createUserTermEnv(client, connection, message)
 {
-    let conf = await getServer(connection, message.guild.id, true)
+    let conf = await getGeneralConfig(connection, message.guild.id);
     return new ExecEnv(client, connection, message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user", []);
 }
 

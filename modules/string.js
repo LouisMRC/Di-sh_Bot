@@ -21,7 +21,7 @@ function replace(str, searchVals, newVals)
     for(let i = 0; i < searchVals.length; i++)
     {
         while(str.includes(searchVals[i]))
-        str.replaces(searchVals[i], newVals[i]);   
+            str = str.replace(searchVals[i], newVals[i]);
     }
     return str;
 }

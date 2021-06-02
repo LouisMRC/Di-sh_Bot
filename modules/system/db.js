@@ -39,7 +39,7 @@ async function dbAddServer(connection, serverID)
  */
 async function saveScript(env, scriptName, script)
 {
-    // checkConnection();
+    env.connection = await checkConnection(env.client.db, env.connection);
     if((await env.connection.query("SELECT Script_name FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, scriptName])).length)
     {
         await env.connection.query("UPDATE scripts SET Script=? Where Server_ID=? AND Script_name=?;", [JSON.stringify(script), env.server.id, scriptName]);
@@ -55,6 +55,7 @@ async function saveScript(env, scriptName, script)
  */
 async function getConfig(env, name)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     let rows = await env.connection.query("SELECT Server_ID, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name=?;", [env.server.id, name]);
     for(let row of rows)if(row.Server_ID === env.server.id)return parseConf(JSON.parse(row.Data));
     return parseConf(JSON.parse(rows[0].Data));
@@ -62,10 +63,27 @@ async function getConfig(env, name)
 
 /**
  * 
+ * @param {import("mariadb").PoolConnection} connection 
+ * @param {string} serverID 
+ * @returns 
+ */
+async function getGeneralConfig(connection, serverID)
+{
+    let config;
+    let rows = await connection.query("SELECT Server_ID, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name='general';", [serverID]);
+    config = parseConf(JSON.parse(rows[0].Data));
+    for(let row of rows)if(row.Server_ID === serverID)config = parseConf(JSON.parse(row.Data));
+
+    return new ServerConf(config.get("prefix"), config.get("lang"), config.get("disable_ping"));
+}
+
+/**
+ * 
  * @param {ExecEnv} env 
  */
-async function listConfigs(env)//get a list of all the default configurations (where serverID=0)
+async function listConfigs(env)//get a list of all the default configurations (where serverID==0)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     let configs = []
     for(let config of await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=0;"))configs.push(config.Config_name);
     return configs;
@@ -79,6 +97,7 @@ async function listConfigs(env)//get a list of all the default configurations (w
  */
 async function updateConfig(env, name, config)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     if((await env.connection.query("SELECT Config_name FROM configs WHERE Server_ID=? AND Config_name=?;", [env.server.id, name])).length)//check if the configuration is already in the db
     {
         await env.connection.query("UPDATE configs SET Data=? Where Server_ID=? AND Config_name=?;", [config, env.server.id, name]);//update the existing configuration
@@ -92,15 +111,17 @@ async function updateConfig(env, name, config)
  */
  async function resetConfig(env, name)
  {
-     await env.connection.query("DELETE FROM config WHERE Server_ID=? AND Config_name=?;", [env.server.id, name]);//delete the custom configuration
+    env.connection = await checkConnection(env.client.db, env.connection);
+    await env.connection.query("DELETE FROM config WHERE Server_ID=? AND Config_name=?;", [env.server.id, name]);//delete the custom configuration
  }
 
  async function checkConnection(pool, connection)
  {
-     await connection.ping()
-         .catch(async () => {
-             connection = await pool.getConnection();
-         });
+    await connection.ping()
+        .catch(async () => {
+            connection = await pool.getConnection();
+        });
+    return connection;
  }
 
 
@@ -111,6 +132,7 @@ module.exports = {
     saveScript,
     
     getConfig,
+    getGeneralConfig,
     listConfigs,
     updateConfig,
     resetConfig,
