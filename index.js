@@ -8,18 +8,21 @@ const { languages, loadLanguages } = require("./modules/lang");
 const { createUserTermEnv, prepareScript, spawnProcess } = require('./modules/di-sh/interpreter/interpreter');
 const { onStart } = require('./modules/system/autoExec');
 const ExecEnv = require('./modules/di-sh/interpreter/execEnv');
+const HelpPageManager = require('./modules/helpPageManager');
 
 
 const Client = new Discord.Client();
 Client.commands = new Discord.Collection();
 Client.processes = new Discord.Collection();
-const pool = Mariadb.createPool( {
+Client.help_pages = new HelpPageManager("./help_pages");
+Client.db = Mariadb.createPool( {
     host: dbHost,
     user: dbUsername,
     password: dbUserPasswd,
     database: dbName,
     connectionLimit: 5
 });
+
 
 for(const file of fs.readdirSync('./commands').filter(file => file.endsWith('.js'))) 
 {
@@ -28,7 +31,7 @@ for(const file of fs.readdirSync('./commands').filter(file => file.endsWith('.js
 }
 
 
-pool.getConnection()
+Client.db.getConnection()
     .then(async (connection) => {
         loadLanguages();
         Client.once("ready", async () => {
@@ -44,7 +47,7 @@ pool.getConnection()
         });
 
         Client.on("message", async (message) => {
-            await checkConnection(pool, connection);
+            connection = await checkConnection(Client.db, connection);
             let env = await createUserTermEnv(Client, connection, message);
             let script = prepareScript(env, message.content);
             if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);
@@ -54,7 +57,7 @@ pool.getConnection()
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
             if(newMessage.editedAt !== null && ((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
             {
-                await checkConnection(pool, connection);
+                connection = await checkConnection(Client.db, connection);
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 let script = prepareScript(env, newMessage.content);
                 if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script);

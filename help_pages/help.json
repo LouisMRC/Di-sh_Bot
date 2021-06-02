@@ -1,0 +1,10 @@
+[
+    {
+        "lang": "en",
+        "content": "`help [command]`"
+    },
+    {
+        "lang": "fr",
+        "content": "`help [commande]`\nBesoin d'aide pour utiliser la commande d'aide ? :joy:\n\nExplique rapidement le fonctionnement du bot ou d'une commande si le nom de celle ci lui est passé(visiblement ça marche aussi avec \"help\")\nSi la commande demandé n'est pas enregistré, `nomDeLaCommande -h` sera executé à la place"
+    }
+]

@@ -1,10 +1,10 @@
 const ExecEnv = require("./di-sh/interpreter/execEnv");
 const { multiline_codeblock } = require("./textDecorations");
-const { digitOnly } = require("./string");
+const { digitOnly, replace } = require("./string");
 const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
 const { saveScript, updateConfig } = require("./system/db");
-const { commandFilter, startWithPrefix } = require("./di-sh/interpreter/contentFilters");
+const { startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 const { spawnProcess, createScriptEnv } = require("./di-sh/interpreter/interpreter");
 const { stringifyConf } = require("./system/config");
 const { removeQuote } = require("./textTransformations");
@@ -173,12 +173,12 @@ function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "
 {
     let display = new MessageEmbed().setColor("BLUE");
     
-    let editorTitle = scriptName === null ? env.serverLocale.script_editor_title_new : env.serverLocale.script_editor_title.replace("$scriptName", scriptName);
+    let editorTitle = scriptName === null ? env.serverLocale.script_editor_title_new : replace(env.serverLocale.script_editor_title, ["$scriptName"], [scriptName]);
     
     let editorWindow = content;
-    editorWindow += saved === null ? "" : env.serverLocale.script_editor_save_indicator.replace("$isSaved", saved ? "█" : " ");
+    editorWindow += saved === null ? "" : "\n" + replace(env.serverLocale.editors_components_save_indicator, ["$isSaved"], [saved ? "█" : " "]);
     
-    editorWindow += editorMsg;
+    editorWindow += (editorMsg.length ? "\n" + editorMsg : "");
     display.addField(editorTitle, editorWindow);
 
 
@@ -186,7 +186,7 @@ function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "
     {
         let clipboardText = (clipboard.length ? "" : "...");
         for(let i = 0; i < clipboard.length; i++)clipboardText += `${i ? "\n" : ""}${clipboard[i]}`;
-        display.addField("Clipboard:", multiline_codeblock(clipboardText));//hardcoded
+        display.addField(env.serverLocale.editors_components_clipboard, multiline_codeblock(clipboardText));
     }
 
     return display;            
@@ -216,35 +216,35 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                 const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
 
                 collector.on("collect", async message => {
-                    if(message.content.startsWith(`${env.serverConfig.getPrefix()}save`))
-                    {
-                        if(script.name === null)
-                        {
-                            collectorEnabled = false;
-                            let newName;
-                            do
-                            {
-                                    await textInput(env, env.serverLocale.script_editor_save_create_name, 60_000, true)
-                                    .then(answer => newName = answer.toLowerCase())
-                                    .catch(err => {
-                                        collector.stop(`save: ${err}`);
-                                        return;
-                                    });
-                            }
-                            while((await connection.query("SELECT Script_ID FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, newName])).length && !(await promptYesNo(env, env.serverLocale.script_editor_save_overwrite_question.replace("$scriptName", newName), 12_000)));
-                            script.name = newName;
-                            collectorEnabled = true;
-                        }
-                        await saveScript(env, script.name, script.read());
-                        saved = true;
-                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
-                        message.delete();
-                    }
-                    else if(startWithPrefix(env.serverConfig.getPrefix(), message.content))
+                     if(startWithPrefix(env.serverConfig.getPrefix(), message.content))
                     {
                         const args = message.content.slice(env.serverConfig.getPrefix().length).split(" ");
                         switch(args[0])
                         {
+                            case "s":
+                            case "save":
+                                if(script.name === null)
+                                {
+                                    collectorEnabled = false;
+                                    let newName;
+                                    do
+                                    {
+                                            await textInput(env, env.serverLocale.script_editor_save_create_name, 60_000, true)
+                                            .then(answer => newName = answer.toLowerCase())
+                                            .catch(err => {
+                                                collector.stop(`save: ${err}`);
+                                                return;
+                                            });
+                                    }
+                                    while((await connection.query("SELECT Script_ID FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, newName])).length && !(await promptYesNo(env, replace(env.serverLocale.script_editor_save_overwrite_question, ["$scriptName"], [newName]), 12_000)));
+                                    script.name = newName;
+                                    collectorEnabled = true;
+                                }
+                                await saveScript(env, script.name, script.read());
+                                saved = true;
+                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
+                                message.delete();
+                                break;
                             case "q":
                             case "quit":
                                 collector.stop("close");
@@ -259,7 +259,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             case "insert":
                                 if(!digitOnly(args[1]))
                                 {
-                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                         .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                     break;
                                 }
@@ -273,7 +273,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             case "move":
                                 if(!digitOnly(args[1]))
                                 {
-                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                         .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                     break;
                                 }
@@ -286,6 +286,12 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             case "c":
                             case "cp":
                             case "copy":
+                                if(insert)
+                                {
+                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.script_editors_errors_copy_empty_line))
+                                        .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                    break;
+                                }
                                 clipboard = [script.read()[cursorPos]];
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
@@ -308,7 +314,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         case 2:
                                             if(!digitOnly(args[1]))
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -326,7 +332,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         default:
                                             if(!digitOnly(args[1]) || !digitOnly(args[2]))
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -340,7 +346,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                             }
                                             if(selectLast <= selectFirst)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -365,28 +371,28 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                     switch(args.length)
                                     {
                                         case 1:
-                                            if(insert || cursorPos < 0 || script.read().length < cursorPos)
+                                            if(cursorPos < 0 || script.read().length < cursorPos)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
                                             var actions = [];
-                                            for(let i = clipboard.length-1; i >= 0; i--)actions.push(new EditorAction(cursorPos, false, clipboard[i]));
+                                            for(let i = clipboard.length-1; i >= 0; i--)actions.push(new EditorAction(cursorPos, insert, clipboard[i]));
                                             script.write(actions);
                                             break;
                                         case 2:
                                         default:
                                             if(!digitOnly(args[1]))
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
                                             const line = parseInt(args[1])-1;
                                             if(line < 0 || script.read().length < line)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -408,7 +414,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         case 1:
                                             if(insert || cursorPos < 0 || script.read().length < cursorPos)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -417,14 +423,14 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         case 2:
                                             if(!digitOnly(args[1]))
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
                                             const line = parseInt(args[1])-1;
                                             if(line < 0 || script.read().length < line)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, ""))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -434,7 +440,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                         default:
                                             if(!digitOnly(args[1]) || !digitOnly(args[2]))
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
@@ -448,7 +454,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                             }
                                             if(selectLast <= selectFirst)
                                             {
-                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nBad Input"))//hardcoded
+                                                editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }

@@ -1,0 +1,10 @@
+[
+    {
+        "lang": "en",
+        "content": "`script [mode][scriptName]`Manager the scripts on this server.\n\n**__Modes:__**\n**create:** Create a new script and open it in the script editor\n**delete:** Delete the script from the server(warning, irreversible)\n**edit:** Open the script in the editor\n**editor:** Open the script editor\n**list:** List the scripts on this server with their number of line\n**show:** Print the script"
+    },
+    {
+        "lang": "fr",
+        "content": "`script [mode][nomDuScript]`\nPermet de gérer les script enregistré sur le serveur.\n\n**__modes:__**\n**create:** Crée un nouveau script et l'ouvre dans l'éditeur\n**delete:** Supprime le script(attention, irréversible)\n**edit:** Ouvre le script dans l'éditeur\n**editor:** Ouvre l'éditeur de script\n**list:** liste les différents scripts enregistré sur le serveur ainsi que leur nombre de lignes\n**show:** Affiche le contunu du script"
+    }
+]

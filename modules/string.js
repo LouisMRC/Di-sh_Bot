@@ -10,6 +10,23 @@ function digitOnly(str)
     return true;
 }
 
+/**
+ * 
+ * @param {string} str 
+ * @param {Array<string>} searchVals 
+ * @param {Array<string>} newVals 
+ */
+function replace(str, searchVals, newVals)
+{
+    for(let i = 0; i < searchVals.length; i++)
+    {
+        while(str.includes(searchVals[i]))
+        str.replaces(searchVals[i], newVals[i]);   
+    }
+    return str;
+}
+
 module.exports = {
-    digitOnly
+    digitOnly,
+    replace
 }

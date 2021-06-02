@@ -1,0 +1,10 @@
+[
+    {
+        "lang": "en",
+        "content": "`say [-o outputID][-p] message`"
+    },
+    {
+        "lang": "fr",
+        "content": "`say [-o outputID][-p] message`\nEnvoie un message dans le salon actuel: ENV.CHANNEL (lire `help env` pour plus de détailles) ou dans la sortis indiqué (-o/--output)\n\n**--output | -o:** permet d'indiquer la sortie où envoyer le message(salon/console/fichier, lire `help outputs` pour plus de détails sur les sorties)\n**--noping | -p:** Désactive les pings sur la commande"
+    }
+]
