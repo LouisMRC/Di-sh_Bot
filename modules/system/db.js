@@ -9,23 +9,16 @@ const ServerConf = require("./serverConfig");
  * @param {boolean} verify 
  * @returns {Promise<ServerConf>}
  */
-async function getServer(connection, serverID, verify = false)
+async function getServers(connection)
 {
-    let config = null;
-    await connection.query("SELECT * FROM servers WHERE Server_ID=?;", [serverID])
-        .then(async (rows) => {
-            if(rows.length)config = new ServerConf(rows[0].Command_prefix, rows[0].Language, rows[0].Auto_NOPING);
-            else if(!rows.length && verify)
-            {
-                await dbAddServer(connection, serverID);
-                config = await getServer(connection, serverID);
-            }
-        })
-        .catch(console.error);
-    return config
+    let servers = [];
+    await connection.query("SELECT Server_ID FROM servers;", [serverID])
+        .then(rows => { for(let row in rows)servers += row.Server_ID });
+    return servers
 }
 async function dbAddServer(connection, serverID)
 {
+    if((await connection.query("SELECT Server_ID FROM servers WHERE Server_ID=?", [serverID])).length)return;
     await connection.query("INSERT INTO servers (Server_ID) VALUES (?);", [serverID])
         .catch(console.error);
 }
@@ -126,7 +119,7 @@ async function updateConfig(env, name, config)
 
 
 module.exports = {
-    getServer,
+    getServers,
     dbAddServer,
 
     saveScript,

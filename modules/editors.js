@@ -531,7 +531,6 @@ function configEditor(env, idleTimeout, configData = {name: null, data: new Map(
 
                             case "s":
                             case "save":
-                                console.log(stringifyConf(config.read()));
                                 await updateConfig(env, config.name, stringifyConf(config.read()));
                                 saved = true;
                                 break;

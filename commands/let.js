@@ -1,4 +1,5 @@
 const execEnv = require("../modules/di-sh/interpreter/execEnv");
+const { Variable } = require("../modules/di-sh/interpreter/variable/variables");
 
 module.exports = {
     name: 'let',
@@ -12,7 +13,7 @@ module.exports = {
      */
     async execute(env, args)
     {
-        //todo: variable
+        env.interpreter.variables.set(args[1], new Variable(args[1], null))
         return env;
     }
 }

@@ -28,7 +28,6 @@ class Token
                     return strVal;
                 case "Token":
                     return Token.toString(obj.value, false);
-                    break;
             }
         }
         else return obj;
@@ -120,8 +119,8 @@ const Types = {
 
 const OperatorPrecedence = {
     EQUAL: 0,
-    COMPARE: 1,
-    LOGIC: 2,
+    LOGIC: 1,
+    COMPARE: 2,
     ADD_SUB: 3,
     MULTI_DIVID_MOD: 4,
     INC_DEC: 5,
@@ -232,9 +231,10 @@ function tokenize(script)
  */
 function parse(script)
 {
-    let parsedScript = searchMention(script);
-    parsedScript = searchString(parsedScript);
+    let parsedScript = searchString(script);
+    parsedScript = searchTwoCharOperators(parsedScript);
     parsedScript = searchExpr(parsedScript);
+    parsedScript = searchMention(parsedScript);
     return parsedScript;
 }
 
@@ -766,5 +766,7 @@ module.exports = {
     searchExpr,
     removeTokensByType,
     checkExpr,
-    shuntingYard
+    shuntingYard,
+    isOperatorToken,
+    isBinaryOperator
 }

@@ -7,7 +7,6 @@
 function parseConf(rawConf)//array config -> map config
 {
     let conf = new Map();
-    // console.log(rawConf);
     for(let line of rawConf)conf.set(line[0], line[1]);
     return conf;
 }

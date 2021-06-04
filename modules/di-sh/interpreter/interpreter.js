@@ -5,10 +5,10 @@ const { getGeneralConfig } = require("../../system/db");
 const { languages } = require("../../lang");
 const { commandFilter } = require("./contentFilters");
 const { sleep } = require("../../system/system");
-const { debug } = require("./../../debug");
 const EventEmitter = require("events");
 const { ChannelOutput } = require("./output")
-const { calculatePermissionLevel, checkPermissionLevel } = require("../../permission");
+const { checkPermissionLevel } = require("../../permission");
+const { calculateExpression } = require("./variable/operations");
 
 class Interpreter extends EventEmitter
 {
@@ -30,6 +30,7 @@ class Interpreter extends EventEmitter
         this.m_Running = false;
         this.m_Terminated = false;
         this.m_Labels = new Map();
+        this.m_Variables = new Map();//todo: variable scope
 
         this.m_LogOutput = (this.m_InterpreterArgv.logChannel === null ? null : new ChannelOutput(this.m_InterpreterArgv.logChannel));
 
@@ -84,6 +85,12 @@ class Interpreter extends EventEmitter
         // const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
         const ping = true;
         // const comOutput = args[args.length -1] !== "noOutput";
+
+        for(let i = 0; i < instruction.length; i++)
+        {
+            if(instruction[i].type === Types.EXPR)instruction[i] = new Token(Types.NUMBER, instruction[i].line, instruction[i].pos, calculateExpression(this.env, instruction[i]).value.toString());//todo: rewrite
+        }
+
         if(this.m_Env.client.commands.has(Token.toString(instruction[0]).toLowerCase()))
         {
             const command = this.m_Env.client.commands.get(Token.toString(instruction[0]).toLowerCase());
@@ -122,6 +129,10 @@ class Interpreter extends EventEmitter
     get labels()
     {
         return this.m_Labels;
+    }
+    get variables()
+    {
+        return this.m_Variables;
     }
 }
 

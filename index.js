@@ -3,7 +3,7 @@ const { isUserMention, getUserID } = require("./modules/mention");
 const Discord = require("discord.js");
 const Mariadb = require("mariadb");
 const { token, dbHost, dbName, dbUsername, dbUserPasswd } = require('./config.json');
-const { getServer, checkConnection } = require("./modules/system/db");
+const { checkConnection, getGeneralConfig, dbAddServer } = require("./modules/system/db");
 const { languages, loadLanguages } = require("./modules/lang");
 const { createUserTermEnv, prepareScript, spawnProcess } = require('./modules/di-sh/interpreter/interpreter');
 const { onStart } = require('./modules/system/autoExec');
@@ -39,7 +39,8 @@ Client.db.getConnection()
             let servers = await connection.query("SELECT Server_ID FROM servers;");
             for(let server of servers)
             {
-                let conf = await getServer(connection, server.Server_ID, true);
+                checkConnection(Client.db, connection);
+                let conf = await getGeneralConfig(connection, server.Server_ID);
                 let guild = await Client.guilds.fetch(server.Server_ID);
                 let env = new ExecEnv(Client, connection, guild, conf, conf.getLanguage, guild.systemChannel, {name: "su", id: "0"}, "script", []);
                 onStart(env);
@@ -66,7 +67,7 @@ Client.db.getConnection()
         })
 
         Client.on("guildCreate", guild => {
-            getServer(connection, guild.id, true);
+            dbAddServer(connection, guild.id);
         });
         
         Client.login(token);
