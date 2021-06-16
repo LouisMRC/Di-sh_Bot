@@ -216,7 +216,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                 const collector = env.channel.createMessageCollector(filter, {max: 100, idle: idleTimeout});
 
                 collector.on("collect", async message => {
-                     if(startWithPrefix(env.serverConfig.getPrefix(), message.content))
+                    if(startWithPrefix(env.serverConfig.getPrefix(), message.content))
                     {
                         const args = message.content.slice(env.serverConfig.getPrefix().length).split(" ");
                         switch(args[0])
@@ -243,7 +243,6 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                 await saveScript(env, script.name, script.read());
                                 saved = true;
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
-                                message.delete();
                                 break;
                             case "q":
                             case "quit":
@@ -253,7 +252,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                             case "exe":
                             case "exec":
                             case "execute":
-                                spawnProcess(createScriptEnv(env.copy()), env.processID, script.name + " test", script.read());//hardcoded process name
+                                spawnProcess(createScriptEnv(env.copy()), env.processID, script.name + " test", script.read(), [], args.slice(1));//hardcoded process name
                                 break;
 
                             case "insert":

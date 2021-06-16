@@ -1,7 +1,9 @@
 const { digitOnly } = require("../../../string");
 const ExecEnv = require("../execEnv");
 const { Variable } = require("./variables");
-const { Token, isOperatorToken, Types } = require("../parser")
+const { isBinaryOperator, isUnaryOperator, Types } = require("../parser/token")
+
+
 
 /**
  * 
@@ -69,7 +71,7 @@ function cast(variable, newType)
  */
 function add(a, b)
 {
-    if(!["number", "string"].includes(a.type) || !["number", "string"].includes(b.type) || a.type !== b.type)throw new Error("can't add: " + a.value + " to: " + b.value);
+    if(!["number", "string"].includes(a.type) || !["number", "string"].includes(b.type) || a.type !== b.type)throw new Error("can't add: " + a.type + " to: " + b.type);
     return new Variable(null, a.value+b.value);
 }
 /**
@@ -79,7 +81,7 @@ function add(a, b)
  */
 function substract(a, b)
 {
-    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't substract: " + a.value + " by: " + b.value);
+    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't substract: " + a.type + " by: " + b.type);
     return new Variable(null, a.value-b.value);
 }
 /**
@@ -89,7 +91,7 @@ function substract(a, b)
  */
 function multiply(a, b)
 {
-    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't multiply: " + a.value + " by: " + b.value);
+    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't multiply: " + a.type + " by: " + b.type);
     return new Variable(null, a.value*b.value);
 }
 /**
@@ -99,7 +101,7 @@ function multiply(a, b)
  */
 function divide(a, b)
 {
-    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't divide: " + a.value + " by: " + b.value);
+    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't divide: " + a.type + " by: " + b.type);
     return new Variable(null, a.value/b.value);
 }
 
@@ -110,7 +112,7 @@ function divide(a, b)
  */
 function mod(a, b)
 {
-    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't divide: " + a.value + " by: " + b.value);
+    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't divide: " + a.type + " by: " + b.type);
     return new Variable(null, a.value%b.value);
 }
 
@@ -131,7 +133,7 @@ function equal(a, b)
  */
  function superior(a, b)
  {
-     if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't compare: " + a.value + " with: " + b.value);
+     if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't compare: " + a.type + " with: " + b.type);
      return new Variable(null, a.value>b.value);
  }
 
@@ -142,7 +144,7 @@ function equal(a, b)
  */
 function inferior(a, b)
 {
-    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't compare: " + a.value + " with: " + b.value);
+    if(!["number"].includes(a.type) || !["number"].includes(b.type))throw new Error("can't compare: " + a.type + " with: " + b.type);
     return new Variable(null, a.value<b.value);
 }
 
@@ -153,20 +155,29 @@ function inferior(a, b)
  */
  function and(a, b)
  {
-     if(!["boolean"].includes(a.type) || !["boolean"].includes(b.type))throw new Error("can't compare: " + a.value + " with: " + b.value);
+     if(!["boolean"].includes(a.type) || !["boolean"].includes(b.type))throw new Error("can't compare: " + a.type + " with: " + b.type);
      return new Variable(null, a.value&&b.value);
  }
 
- /**
+/**
  * 
  * @param {Variable} a 
  * @param {Variable} b 
  */
 function or(a, b)
 {
-    if(!["boolean"].includes(a.type) || !["boolean"].includes(b.type))throw new Error("can't compare: " + a.value + " with: " + b.value);
-    console.log(new Variable(null, a.value|b.value))
+    if(!["boolean"].includes(a.type) || !["boolean"].includes(b.type))throw new Error("can't compare: " + a.type + " with: " + b.type);
     return new Variable(null, a.value||b.value);
+}
+
+/**
+ * 
+ * @param {Variable} a 
+ */
+function not(a)
+{
+    if(!["boolean"].includes(a.type))throw new Error("wrong type: " + a.type + " must be : boolean");
+    return new Variable(null, !a.value);
 }
 
 /**
@@ -181,26 +192,25 @@ function set(a, b)
     return a;
 }
 
-/**
- * 
- * @param {ExecEnv} env 
- * @param {Token} expression 
- */
 function calculateExpression(env, expression)
 {
-    console.log(expression);
     let operationStack = [];
-    for(let token of expression.value)
+    for(let token of expression)
     {
-        if(isOperatorToken(token))
+        if(isBinaryOperator(token))
         {
             const rightOperande = operationStack.pop();
             const leftOperande = operationStack.pop();
             operationStack.push(matchOperator(env, leftOperande, rightOperande, token.type));
         }
+        else if(isUnaryOperator(token))
+        {
+            const operande = operationStack.pop();
+            operationStack.push(matchOperator(env, operande, null, token.type));
+        }
         else
         {
-            if(token.type === Types.IDENTIFIER)operationStack.push(env.interpreter.variables.get(token.value));
+            if(token.value.startsWith("$"))operationStack.push(env.interpreter.variables.get(token.value.slice(1)));
             else operationStack.push(new Variable(null, (token.type === Types.NUMBER ? parseInt(token.value, 10) : token.value)));
         }
     }
@@ -209,7 +219,6 @@ function calculateExpression(env, expression)
 
 function matchOperator(env, leftOperande, rightOperande, operator)
 {
-    console.log(`${JSON.stringify(leftOperande)}\n${JSON.stringify(rightOperande)}`);
     switch(operator)
     {
         case Types.PLUS:
@@ -228,6 +237,8 @@ function matchOperator(env, leftOperande, rightOperande, operator)
             return result;
         case Types.EQUAL_EQUAL:
             return equal(leftOperande, rightOperande);
+        case Types.NOT_EQUAL:
+            return not(equal(leftOperande, rightOperande));
         case Types.SUPERIOR:
             return superior(leftOperande, rightOperande);
         case Types.INFERIOR:
@@ -240,6 +251,17 @@ function matchOperator(env, leftOperande, rightOperande, operator)
             return and(leftOperande, rightOperande);
         case Types.OR:
             return or(leftOperande, rightOperande);
+        case Types.NOT:
+            return not(leftOperande);
+        case Types.CAST_BOOL:
+            return cast(leftOperande, "boolean");
+        case Types.CAST_NUM:
+            return cast(leftOperande, "number");
+        case Types.CAST_OBJ:
+            return cast(leftOperande, "object");
+        case Types.CAST_STR:
+            return cast(leftOperande, "string");
+        
     }
 }
 
