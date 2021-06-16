@@ -111,18 +111,17 @@ function tokenize(script)
                     break;
                 case "'":
                 case '"':
-                    let stringContent = c;
-                    let k = j;
-                    while(j < line.length && line[k] !== c)
+                    let stringContent = "";
+                    let k = j+1;
+                    while(k < line.length && line[k] !== c)
                         stringContent += line[k++];
-
-                    if(stringContent.slice(-1) === c)
+                        
+                    if(k < line.length)
                     {
                         tokenizedLine.push(new Token(Types.STRING, i, j, stringContent));
                         j = k;
                     }
                     else tokenizedLine.push(new Token(Types.UNEXPECTED, i, j, c));
-
                     break;
                 case "(":
                     tokenizedLine.push(new Token(Types.LEFT_PARENTHESIS, i, j, c));

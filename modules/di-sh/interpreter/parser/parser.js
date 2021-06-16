@@ -69,7 +69,6 @@ function parse(tokens)
                     else if(line[k].type === Types.RIGHT_PARENTHESIS)parentheses--;
                     expr.push(line[k++]);
                 }
-                
                 if(expr.length === 1)
                 {
                     j = k-1;
