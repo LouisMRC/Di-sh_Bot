@@ -55,7 +55,7 @@ module.exports = {
                 break;
             case "step":
                 let process = env.client.processes.get(env.server.id).processes.get(parseInt(args[2]));
-                process.interpreter.step(parseInt(args[3]));
+                await process.interpreter.step(parseInt(args[3]));
                 break;
         }
     }

@@ -43,71 +43,76 @@ function tokenize(script)
                     }
                     break;
                 case "*":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.ASTERISK_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=")
                     {
-                        tokenizedLine.push(new Token(Types.ASTERISK, i, j, c));
+                        tokenizedLine.push(new Token(Types.ASTERISK_EQUAL, i, j, c+"="));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.ASTERISK, i, j, c));
                     break;
                 case "/":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.SLASH_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=")
                     {
-                        tokenizedLine.push(new Token(Types.SLASH, i, j, c));
+                        tokenizedLine.push(new Token(Types.SLASH_EQUAL, i, j, c+"="));
                         j++;
-                    }
+                    } 
+                    else tokenizedLine.push(new Token(Types.SLASH, i, j, c));
                     break;
                 case "%":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.PERCENT_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=")
                     {
-                        tokenizedLine.push(new Token(Types.PERCENT, i, j, c));
+                        tokenizedLine.push(new Token(Types.PERCENT_EQUAL, i, j, c+"="));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.PERCENT, i, j, c));
                     break;
                 case "=":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.EQUAL_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=") 
                     {
-                        tokenizedLine.push(new Token(Types.EQUAL, i, j, c));
+                        tokenizedLine.push(new Token(Types.EQUAL_EQUAL, i, j, c+"="));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.EQUAL, i, j, c));
                     break;
                 case ">":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.SUPERIOR_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=")
                     {
-                        tokenizedLine.push(new Token(Types.SUPERIOR, i, j, c));
+                        tokenizedLine.push(new Token(Types.SUPERIOR_EQUAL, i, j, c+"="));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.SUPERIOR, i, j, c));
                     break;
                 case "<":
-                    if(j+1 < line.length && line[j+1] === "=") tokenizedLine.push(new Token(Types.INFERIOR_EQUAL, i, j, c+"="));
-                    else
+                    if(j+1 < line.length && line[j+1] === "=")
                     {
-                        tokenizedLine.push(new Token(Types.INFERIOR, i, j, c));
+                        tokenizedLine.push(new Token(Types.INFERIOR_EQUAL, i, j, c+"="));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.INFERIOR, i, j, c));
                     break;
                 case "&":
-                    if(j+1 < line.length && line[j+1] === "&") tokenizedLine.push(new Token(Types.DOUBLE_AND, i, j, c+"&"));
-                    else
+                    if(j+1 < line.length && line[j+1] === "&")
                     {
-                        tokenizedLine.push(new Token(Types.AND, i, j, c));
+                        tokenizedLine.push(new Token(Types.DOUBLE_AND, i, j, c+"&"));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.AND, i, j, c));
                     break;
                 case "|":
-                    if(j+1 < line.length && line[j+1] === "|") tokenizedLine.push(new Token(Types.DOUBLE_OR, i, j, c+"|"));
-                    else
+                    if(j+1 < line.length && line[j+1] === "|")
                     {
-                        tokenizedLine.push(new Token(Types.OR, i, j, c));
+                        tokenizedLine.push(new Token(Types.DOUBLE_OR, i, j, c+"|"));
                         j++;
                     }
+                    else tokenizedLine.push(new Token(Types.OR, i, j, c));
                     break;
                 case "!":
-                    tokenizedLine.push(new Token(Types.NOT, i, j, c));
+                    if(j+1 < line.length && line[j+1] === "=")
+                    {
+                        tokenizedLine.push(new Token(Types.NOT_EQUAL, i, j, c+"="));
+                        j++;
+                    }
+                    else tokenizedLine.push(new Token(Types.NOT, i, j, c));
                     break;
                 case "'":
                 case '"':
@@ -144,6 +149,8 @@ function tokenize(script)
                 // case "$":
                 //     tokenizedLine.push(new Token(Types.DOLLARD, i, j, c));
                 //     break;
+                case " ":
+                    break;
                 default:
                     if(isDigit(c) || isIdentifierChar(c))
                     {
@@ -154,7 +161,7 @@ function tokenize(script)
                             tokenValue += line[++j];
                             if(isIdentifierChar(line[j]) && type === Types.NUMBER)type = Types.IDENTIFIER;
                         }
-                        if(j+1 < line.length && j-1 < 0 && tokenizedLine[tokenizedLine.length - 1].type === Types.LEFT_PARENTHESIS && ["bool", "num", "obj", "str"].includes(tokenValue) && line[j+1] === ")")
+                        if(j+1 < line.length && j-1 < 0 && tokenizedLine.length && tokenizedLine[tokenizedLine.length - 1].type === Types.LEFT_PARENTHESIS && ["bool", "num", "obj", "str"].includes(tokenValue) && line[j+1] === ")")
                         {
                             let token = tokenizedLine.pop();
                             switch(tokenValue)

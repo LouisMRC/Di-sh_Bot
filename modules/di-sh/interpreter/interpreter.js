@@ -24,7 +24,7 @@ class Interpreter extends EventEmitter
     constructor(script, env, interpreterArgv, scriptArgv)
     {
         super();
-        this.m_Script = parse(tokenize(script));
+        this.m_Script = [new Scope(parse(tokenize(script)))];
         this.m_Env = env;
         this.m_InterpreterArgv = {logChannel: null};
         // this.m_ScriptArgv = scriptArgv;
@@ -32,32 +32,53 @@ class Interpreter extends EventEmitter
         this.m_Active = false;
         this.m_Running = false;
         this.m_Terminated = false;
-        this.m_Labels = new Map();
-        this.m_Variables = new Map();//todo: variable scope
 
-        for(let i = 0; i < scriptArgv.length; i++)this.m_Variables.set(i.toString(), new Variable(i.toString(), scriptArgv[i]));
-        this.m_Variables.set("argv", new Variable("argv", scriptArgv));
+        for(let i = 0; i < scriptArgv.length; i++)this.currentScope().declareVariable(new Variable(i.toString(), scriptArgv[i]));
+        this.currentScope().declareVariable(new Variable("argv", scriptArgv));
 
         this.m_LogOutput = (this.m_InterpreterArgv.logChannel === null ? null : new ChannelOutput(this.m_InterpreterArgv.logChannel));
 
         this.m_Env.interpreter = this;
     }
-    step(steps)
+    async step(steps)
     {
-        for(let i = 0; this.m_ProgrammCounter < this.m_Script.length && i < steps; i++)
+        for(let i = 0; i < steps; i++)
         {
-            this.execute(this.m_Script[this.m_ProgrammCounter]);
-            this.m_ProgrammCounter++;
+            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            {
+                while(this.currentScope().step() == null)
+                {
+                    this.m_Script.pop();
+                    if(this.m_Script.length == 0)
+                    {
+                        this.exit();
+                        return;
+                    }
+                }
+            }
         }
-        if(this.m_ProgrammCounter >= this.m_Script.length)this.emit("terminated", 0);
     }
     async run()
     {
         this.m_Active = true;
         this.m_Running = true;
-        while(this.m_Active && this.m_ProgrammCounter < this.m_Script.length)await this.execute(this.m_Script[this.m_ProgrammCounter++]);
+        while(this.m_Active)
+        {
+            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            {
+                while(this.currentScope().step() == null)
+                {
+                    this.m_Script.pop();
+                    if(this.m_Script.length == 0)
+                    {
+                        this.m_Running = false;
+                        this.exit();
+                        return;
+                    }
+                }  
+            }
+        }
         this.m_Running = false;
-        if(this.m_ProgrammCounter >= this.m_Script.length && this.m_Active)this.emit("terminated", 0);
     }
     exit(code = 0)
     {
@@ -67,19 +88,10 @@ class Interpreter extends EventEmitter
     {
         this.m_Active = false;
     }
-    jump(instructionNumber)
-    {
-        this.m_ProgrammCounter = instructionNumber;
-    }
 
     async awaitFullStop()
     {
         while(this.m_Running)await sleep(10);
-    }
-
-    createLabel(name)
-    {
-        this.m_Labels.set(name, this.m_ProgrammCounter);
     }
 
     /**
@@ -94,7 +106,16 @@ class Interpreter extends EventEmitter
 
         for(let i = 0; i < instruction.length; i++)
         {
-            if(instruction[i].type === SymbolTypes.EXPRESSION)instruction[i] = instruction[i].calculate(this.env);//todo: rewrite
+            if(instruction[i].type == SymbolTypes.EXPRESSION)instruction[i] = instruction[i].calculate(this.env);//todo: rewrite
+            else if(instruction[i].type == SymbolTypes.IF_EPRESSION)
+            {
+                const ifElseBlock = instruction[i].calculate(this.env);
+                if(ifElseBlock != null)
+                {
+                    this.pushScope(new Scope(ifElseBlock, this.currentScope().variables));
+                    return 1;
+                }
+            }
         }
 
         if(this.m_Env.client.commands.has(instruction[0].value))
@@ -119,6 +140,18 @@ class Interpreter extends EventEmitter
             .catch(console.error);
         }
     }
+    pushScope(scope)
+    {
+        this.m_Script.push(scope);
+    }
+    popScope()
+    {
+        return this.m_Script.pop();
+    }
+    currentScope()
+    {
+        return this.m_Script[this.m_Script.length-1];
+    }
 
     get env()
     {
@@ -131,6 +164,49 @@ class Interpreter extends EventEmitter
     get running()
     {
         return this.m_Running;
+    }
+}
+
+class Scope
+{
+    constructor(instructions, prevScopVars = new Map())
+    {
+        this.m_Instructions = instructions;
+        this.m_Labels = new Map();
+        this.m_Variables = prevScopVars;
+        this.m_CurrentLine = 0;
+    }
+    jump(instructionNumber)
+    {
+        this.m_CurrentLine = instructionNumber;
+    }
+    step()
+    {
+        if(++this.m_CurrentLine < this.m_Instructions.length)return this.m_Instructions;
+        return null;
+    }
+
+    createLabel(name)
+    {
+        this.m_Labels.set(name, this.m_ProgrammCounter);
+    }
+
+    /**
+     * 
+     * @param {Variable} newVariable 
+     */
+    declareVariable(newVariable)
+    {
+        this.m_Variables.set(newVariable.name, newVariable);
+    }
+
+    get currentInstruction()
+    {
+        return this.m_Instructions[this.m_CurrentLine];
+    }
+    get currentLine()
+    {
+        return this.m_CurrentLine;
     }
     get labels()
     {

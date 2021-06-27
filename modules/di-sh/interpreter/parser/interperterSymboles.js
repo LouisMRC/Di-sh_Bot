@@ -5,7 +5,9 @@ const SymbolTypes = {
     STRING: "STRING",
     NUMBER: "NUMBER",
     EXPRESSION: "EXPRESSION",
-    IF_EPRESSION: "IF_EPRESSION"
+    IF_EPRESSION: "IF_EPRESSION",
+
+    UNEXPECTED: "UNEXPECTED"
 }
 
 class InterpreterSymbol
@@ -55,7 +57,7 @@ class If_Expression extends InterpreterSymbol
 
     calculate(env)
     {
-        return (calculateExpression(env, this.m_Expression).value ? this.m_IfBlock : this.m_ElseBlock);
+        return (calculateExpression(env, this.m_Condition).value ? this.m_IfBlock : this.m_ElseBlock);
     }
 
 }

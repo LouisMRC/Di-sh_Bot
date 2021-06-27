@@ -2,6 +2,8 @@ const { isMention } = require("../../../mention");
 const { calculateExpression } = require("../variable/operations");
 const { Token, Types, isValueToken, isOperatorToken, isBinaryOperator, isUnaryOperator, isCastOperator } = require("./token");
 const { SymbolTypes, InterpreterSymbol, Expression, If_Expression } = require("./interperterSymboles");
+const keywords = require("../keywords/keywords.json");
+const { createPool } = require("mariadb");
 
 
 const OperatorPrecedence = {
@@ -29,36 +31,21 @@ function parse(tokens)
         for(let j = 0; j < line.length; j++)
         {
             const token = line[j];
-            if(isUnaryOperator(token) || [Types.MINUS, Types.STRING, Types.NUMBER, Types.IDENTIFIER].includes(token.type))
-            {
-                let expr = [token];
-                let k = j + 1;
-                while(([Types.STRING, Types.NUMBER, Types.IDENTIFIER, Types.LEFT_PARENTHESIS, Types.RIGHT_PARENTHESIS].includes(line[k].type) || isOperatorToken(line[k])) && line[k] !== Types.EOL)
-                    expr.push(line[k++]);
+            // if(isUnaryOperator(token) || [Types.MINUS, Types.STRING, Types.NUMBER, Types.IDENTIFIER].includes(token.type))
+            // {
+            //     let expr = [token];
+            //     let k = j + 1;
+            //     while(([Types.STRING, Types.NUMBER, Types.IDENTIFIER, Types.LEFT_PARENTHESIS, Types.RIGHT_PARENTHESIS].includes(line[k].type) || isOperatorToken(line[k])) && line[k] !== Types.EOL)
+            //         expr.push(line[k++]);
                 
-                if(expr.length > 1)
-                {
-                    if(checkExpr(expr))newLine.push(new Expression(shuntingYard(expr)));
-                    // else newLine.push(new Token(Types.UNEXPECTED, i, j, expr));
-                    j = k-1;
-                }
-                else
-                {
-                    switch(token.type)
-                    {
-                        case Types.IDENTIFIER:
-                            newLine.push(new InterpreterSymbol(SymbolTypes.IDENTIFIER, token.value));
-                            break;
-                        case Types.NUMBER:
-                            newLine.push(new InterpreterSymbol(SymbolTypes.NUMBER, token.value));
-                            break;
-                        case Types.STRING:
-                            newLine.push(new InterpreterSymbol(SymbolTypes.STRING, token.value));
-                            break;
-                    }//check here
-                }
-            }
-            else if(token.type === Types.LEFT_PARENTHESIS)
+            //     if(expr.length > 1)
+            //     {
+            //         if(checkExpr(expr))newLine.push(new Expression(shuntingYard(expr)));
+            //         else newLine.push(new InterpreterSymbol(SymbolTypes.UNEXPECTED, expr));
+            //         j = k-1;
+            //     }
+            // }
+            if(token.type === Types.LEFT_PARENTHESIS)
             {
                 let expr = [token];
                 let k = j + 1;
@@ -72,7 +59,7 @@ function parse(tokens)
                 if(expr.length === 1)
                 {
                     j = k-1;
-                    // newLine.push(new Token(Types.UNEXPECTED, i, j, token.value));
+                    newLine.push(new InterpreterSymbol(SymbolTypes.UNEXPECTED, token.value));
                 }
                 else
                 {
@@ -96,25 +83,72 @@ function parse(tokens)
                             }//check here
                         }
                     }
-                    // else newLine.push(new Token(Types.UNEXPECTED, i, j, expr));
+                    else newLine.push(new InterpreterSymbol(SymbolTypes.UNEXPECTED, expr));
                     j = k-1;
                 }
             }
             else
             {
-                switch(token.type)
+                if(token.type == Types.IDENTIFIER)
                 {
-                    case Types.IDENTIFIER:
-                        newLine.push(new InterpreterSymbol(SymbolTypes.IDENTIFIER, token.value));
-                        break;
-                    case Types.NUMBER:
-                        newLine.push(new InterpreterSymbol(SymbolTypes.NUMBER, token.value));
-                        break;
-                    case Types.STRING:
-                        newLine.push(new InterpreterSymbol(SymbolTypes.STRING, token.value));
-                        break;
-                }//check here
+                    if(token.value == keywords.If)//todo: add syntax check and security code
+                    {
+                        let conditionExpr = [];
+                        let ifBlock = [];
+                        let elseBlock = [];
+                        let l = i;
+                        k = j+1;
+                        if(line[k++].type == Types.LEFT_PARENTHESIS)while(line[k].type != Types.RIGHT_PARENTHESIS)conditionExpr.push(line[k++]);
+                        if(line[k+1].type != Types.EOL)
+                        {
+                            if(line[k+1].type == Types.LEFT_CURLY)
+                            {
+                                while(++l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)ifBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else 
+                            {
+                                ifBlock.push(line.slice(k+1));
+                                j = line.length;
+                            }
+                        }
+                        else
+                        {
+                            if(tokens[l+1][0].type == Types.LEFT_CURLY)
+                            {
+                                l+=2;
+                                while(l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)ifBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else
+                            {
+                                ifBlock.push(tokens[++l]);
+                                j = line.length;
+                                i = l;
+                            }
+                        }
+                        //todo: else block handling
+                        newLine.push(new If_Expression(shuntingYard(conditionExpr), parse(ifBlock)));
+                        continue;
+                    }
+                    newLine.push(new InterpreterSymbol(SymbolTypes.IDENTIFIER, token.value));
+                }
+                else if(token.type == Types.NUMBER)
+                {
+                    newLine.push(new InterpreterSymbol(SymbolTypes.NUMBER, token.value));
+                }
+                else if(token.type == Types.STRING)
+                {
+                    newLine.push(new InterpreterSymbol(SymbolTypes.STRING, token.value));
+                }
+                //check here
             }
+            // else
+            // {
+
+            // }
         }
         // for(let i = 0; i < newLine.length; i++)if(newLine[i].type === Types.MINUS)newLine[i].type = Types.PIPE;
         script.push(newLine);
