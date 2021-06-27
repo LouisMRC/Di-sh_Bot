@@ -8,6 +8,7 @@ const { startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 const { spawnProcess, createScriptEnv } = require("./di-sh/interpreter/interpreter");
 const { stringifyConf } = require("./system/config");
 const { removeQuote } = require("./textTransformations");
+const { last } = require("./array");
 
 class EditorBuffer
 {
@@ -25,11 +26,21 @@ class EditorBuffer
     }
     undo()
     {
-        if(this.m_Undo.length)this.m_Redo.push(this.m_Undo.pop());
+        if(this.m_Undo.length)
+        {
+            const actions = this.m_Undo.pop()
+            this.m_Redo.push(actions);
+            return actions;
+        }
     }
     redo()
     {
-        if(this.m_Redo.length)this.m_Undo.push(this.m_Redo.pop());
+        if(this.m_Redo.length)
+        {
+            const actions = this.m_Redo.pop();
+            this.m_Undo.push(actions);
+            return actions;
+        }
     }
     read()
     {
@@ -81,11 +92,21 @@ class ObjEditorBuffer
     }
     undo()
     {
-        if(this.m_Undo.length)this.m_Redo.push(this.m_Undo.pop());
+        if(this.m_Undo.length)
+        {
+            const actions = this.m_Undo.pop()
+            this.m_Redo.push(actions);
+            return actions;
+        }
     }
     redo()
     {
-        if(this.m_Redo.length)this.m_Undo.push(this.m_Redo.pop());
+        if(this.m_Redo.length)
+        {
+            const actions = this.m_Redo.pop();
+            this.m_Undo.push(actions);
+            return actions;
+        }
     }
     read()
     {
@@ -201,15 +222,15 @@ function createDisplay(scriptName, content, env, saved, clipboard, editorMsg = "
  * @param {boolean} overwrite
  */
 
-function scriptEditor(client, connection, env, idleTimeout, scriptData = {scriptName: null, script: []})
+function scriptEditor(client, connection, env, idleTimeout, scriptData = {scriptName: null, script: []})//todo: default name
 {
     return new Promise((resolve, reject) => {
-        let script = new EditorBuffer(scriptData.scriptName, scriptData.script)
-        let cursorPos = -1;
+        let script = new EditorBuffer(scriptData.scriptName, scriptData.script);
+        let cursorPos = script.read().length - 1;
         let clipboard = [];
         let insert = true;
         let saved = true;
-        env.channel.send(createDisplay(script.name, displayScript(script.read(), true, true), env, saved, clipboard))
+        env.channel.send(createDisplay(script.name, displayScript(script.read(), true, true, cursorPos), env, saved, clipboard))
             .then(editorWindow => {
                 let collectorEnabled = true;
                 const filter = msg => msg.author.id === env.user.id && collectorEnabled;
@@ -255,6 +276,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                 spawnProcess(createScriptEnv(env.copy()), env.processID, script.name + " test", script.read(), [], args.slice(1));//hardcoded process name
                                 break;
 
+                            case "i":
                             case "insert":
                                 if(!digitOnly(args[1]))
                                 {
@@ -264,11 +286,11 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                 }
                                 var newPos = parseInt(args[1]);
                                 cursorPos = (newPos - 1 <= script.read().length ? (newPos -1 > -2 ? newPos -1 : -1) : script.read().length);
-                                insert = true
+                                insert = true;
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
 
-                            case "mv":
+                            case "mv": // args: position
                             case "move":
                                 if(!digitOnly(args[1]))
                                 {
@@ -282,32 +304,79 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
 
-                            case "c":
+                            case "c": // args: ?pos, ?pos2
                             case "cp":
                             case "copy":
-                                if(insert)
+                                if(args.length == 1)
                                 {
-                                    editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.script_editors_errors_copy_empty_line))
-                                        .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
-                                    break;
+                                    if(cursorPos < 0 || script.read().length < cursorPos)
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    clipboard = [script.read()[cursorPos]];
                                 }
-                                clipboard = [script.read()[cursorPos]];
+                                else if(args.length == 2)
+                                {
+                                    if(!digitOnly(args[1]))
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    const line = parseInt(args[1])-1;
+                                    if(line < 0 || script.read().length < line)
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    clipboard = [script.read()[line]];
+                                }
+                                else
+                                {
+                                    if(!digitOnly(args[1]) || !digitOnly(args[2]))
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    const selectFirst = parseInt(args[1])-1;
+                                    const selectLast = parseInt(args[2])-1;
+                                    if(selectFirst < 0 || script.read().length < selectFirst || selectLast < 0 || script.read().length < selectLast)
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    if(selectLast <= selectFirst)
+                                    {
+                                        editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, env.serverLocale.editors_errors_bad_input))
+                                            .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
+                                        return;
+                                    }
+                                    clipboard = [];
+                                    for(let i = selectFirst; i < selectLast+1; i++)clipboard.push(script.read()[i]);
+                                }
+                                insert = true;
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
 
-                            case "x":
+                            case "x": // args: ?pos, ?pos2
                             case "cut":
                                 (() => {
                                     switch(args.length)
                                     {
                                         case 1:
-                                            if(insert || cursorPos < 0 || script.read().length < cursorPos)
+                                            if(cursorPos < 0 || script.read().length < cursorPos)
                                             {
                                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard, "\nError:\nCan't copy empty line"))//hardcoded
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
                                             clipboard = [script.read()[cursorPos]];
+                                            cursorPos--;
                                             script.write([new EditorAction(cursorPos, false, null)]);
                                             break;
                                         case 2:
@@ -325,6 +394,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                 return;
                                             }
                                             clipboard = [script.read()[line]];
+                                            if(line <= cursorPos)cursorPos--; 
                                             script.write([new EditorAction(line, false, null)]);
                                             break;
                                         case 3:
@@ -356,15 +426,18 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                 clipboard.push(script.read()[i]);
                                                 actions.push(new EditorAction(i, false, null))
                                             }
+                                            if(selectFirst < cursorPos && selectLast < cursorPos)cursorPos -= (selectLast+1)-(selectFirst+1)+1;
+                                            else if(selectFirst < cursorPos)cursorPos -= (cursorPos+1)-(selectFirst+1)+1;
                                             script.write(actions);
                                             break;
                                     }
                                     saved = false;
+                                    insert = true;
                                     editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 })();
                                 break;
 
-                            case "p":
+                            case "p": // args: ?pos
                             case "paste":
                                 (() => {
                                     switch(args.length)
@@ -377,10 +450,11 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                 return;
                                             }
                                             var actions = [];
-                                            for(let i = clipboard.length-1; i >= 0; i--)actions.push(new EditorAction(cursorPos, insert, clipboard[i]));
+                                            for(let i = 0; i < clipboard.length; i++)actions.push(new EditorAction(cursorPos, insert, clipboard[i]));
+                                            cursorPos += clipboard.length;
                                             script.write(actions);
                                             break;
-                                        case 2:
+                                        case 2: //args: position
                                         default:
                                             if(!digitOnly(args[1]))
                                             {
@@ -396,16 +470,18 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                 return;
                                             }
                                             var actions = [];
-                                            for(let i = clipboard.length-1; i >= 0; i--)actions.push(new EditorAction(line, false, clipboard[i]));
+                                            for(let i = 0; i < clipboard.length; i++)actions.push(new EditorAction(line, true, clipboard[i]));
+                                            if(line < cursorPos | (line == cursorPos && !insert))cursorPos += clipboard.length;
                                             script.write(actions);
                                             break;
                                     }
                                     saved = false;
+                                    insert = true;
                                     editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 })();
                                 break;
 
-                            case "rm":
+                            case "rm": // args: ?pos, ?pos2
                             case "remove":
                                 (() => {
                                     switch(args.length)
@@ -417,6 +493,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
+                                            cursorPos--;
                                             script.write([new EditorAction(cursorPos, false, null)]);
                                             break;
                                         case 2:
@@ -433,6 +510,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                     .then(() => setTimeout(() => editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard)), 5_000));
                                                 return;
                                             }
+                                            if(line <= cursorPos)cursorPos--;
                                             script.write([new EditorAction(line, false, null)]);
                                             break;
                                         case 3:
@@ -459,23 +537,32 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                             }
                                             let actions = [];
                                             for(let i = selectFirst; i < selectLast+1; i++)actions.push(new EditorAction(i, false, null));
+                                            if(selectFirst < cursorPos && selectLast < cursorPos)cursorPos -= (selectLast+1)-(selectFirst+1)+1;
+                                            else if(selectFirst < cursorPos)cursorPos -= (cursorPos+1)-(selectFirst+1)+1;
                                             script.write(actions);
                                             break;
                                     }
                                     saved = false;
+                                    insert = true;
                                     editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 })();
                                 break;
 
                             case "z":
                             case "undo":
-                                script.undo();
+                                var actions = script.undo();
+                                if(actions[0].line == null)cursorPos = last(actions).pos;
+                                else cursorPos = actions[0].pos;
+                                insert = true;
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
 
                             case "y":
                             case "redo":
-                                script.redo();
+                                var actions = script.redo();
+                                if(actions[0].line == null)cursorPos = last(actions).pos;
+                                else cursorPos = actions[0].pos;
+                                insert = true;
                                 editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                                 break;
                         }
@@ -485,15 +572,17 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                     {
                         script.write([new EditorAction(cursorPos, insert, message.content)]);
                         message.delete();
-                        insert = true;
                         saved = false;
-                        cursorPos++;
+                        if(insert)cursorPos++;
+                        insert = true;
                         editorWindow.edit(createDisplay(script.name, displayScript(script.read(), true, insert, cursorPos), env, saved, clipboard));
                     }
                 })
         
                 collector.on("end", async (collected, reason) => {
-                    if(reason === "close")
+                    editorWindow.edit(new MessageEmbed().setColor("BLUE").setTitle(replace(env.serverLocale.editors_closed_message, ["$bufferName"], [script.name])))
+                        .then(closedMsg => setTimeout(() => closedMsg.delete(), 5_000));
+                    if(reason === "close" || reason == "idle")
                     {
                         resolve(reason);
                     }
@@ -552,7 +641,7 @@ function configEditor(env, idleTimeout, configData = {name: null, data: new Map(
                     else if(!startWithPrefix(env.serverConfig.getPrefix(), message.content))
                     {
                         let editorMessage = "";
-                        let line = message.content
+                        let line = message.content;
                         if(line.includes("="))
                         {
                             let separatorIndex = line.indexOf("=");
@@ -566,7 +655,9 @@ function configEditor(env, idleTimeout, configData = {name: null, data: new Map(
                 })
         
                 collector.on("end", async (collected, reason) => {
-                    if(reason === "close")
+                    editorWindow.edit(new MessageEmbed().setColor("BLUE").setTitle(replace(env.serverLocale.editors_closed_message, ["$bufferName"], [script.name])))
+                        .then(closedMsg => setTimeout(() => closedMsg.delete(), 5_000));
+                    if(reason === "close" || reason == "idle")//todo: error catch
                     {
                         resolve(reason);
                     }

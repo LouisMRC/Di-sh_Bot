@@ -29,6 +29,8 @@
 
     "editors_errors_bad_input": "Erreur de saisie!!",
 
+    "editors_closed_message": "Edition de **$bufferName** terminé",
+
 
     "script_editor_title": "Modification de $scriptName:",
 
