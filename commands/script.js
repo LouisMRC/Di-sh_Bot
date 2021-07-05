@@ -2,6 +2,8 @@ const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 const { MessageEmbed } = require("discord.js");
 const { displayScript, scriptEditor } = require("../modules/editors");
 const { bold } = require("../modules/textDecorations");
+const { FileOutput } = require("../modules/di-sh/interpreter/output");
+const request = require("request");
 
 module.exports = {
     name: 'script',
@@ -87,7 +89,20 @@ module.exports = {
             case "rename":
                 await env.connection.query("UPDATE scripts SET Script_name=? WHERE Server_ID=? AND Script_name=?;", [args[3], env.server.id, args[2]]);
                 break;
-        }
+            case "import":
+                break;
+            case "export":
+                {
+                    const script = await env.connection.query("SELECT Script_name, Script FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, args[2].toLowerCase()]);
+                    if(script.length)
+                    {
+                        const output = new FileOutput(env.channel, false, script[0].Script_name+".dsh");
+                        for(let line of script[0].Script)await output.send(line, env);
+                        output.display(env);
+                    }
+                }
+                break;
+            }
         return env;
     }
 }
