@@ -19,8 +19,6 @@ module.exports = {
         {
             case "edit":
                 configEditor(env, 120_000, {name: args[2].toLowerCase(), data: (await getConfig(env, args[2].toLowerCase()))})
-                    .then(async () => await env.send("finished"))
-                    .catch(async () => await env.send("timeout"));
                 break;
             case "reset":
                 resetConfig(env, args[2].toLowerCase());

@@ -1,4 +1,5 @@
-const { parse, tokenize, Token, removeTokensByType, Types } = require("./parser");
+const { parse, removeTokensByType } = require("./parser/parser");
+const { tokenize, Token, Types } = require("./parser/lexer");
 const ExecEnv = require("./execEnv");
 const { Message } = require("discord.js");
 const { getGeneralConfig } = require("../../system/db");
@@ -9,6 +10,8 @@ const EventEmitter = require("events");
 const { ChannelOutput } = require("./output")
 const { checkPermissionLevel } = require("../../permission");
 const { calculateExpression } = require("./variable/operations");
+const { Variable } = require("./variable/variables");
+const { SymbolTypes, InterpreterSymbol } = require("./parser/interperterSymboles");
 
 class Interpreter extends EventEmitter
 {
@@ -16,42 +19,66 @@ class Interpreter extends EventEmitter
      * 
      * @param {Array<string>} script 
      * @param {ExecEnv} env 
-     * @param {Array<string>} argv 
+     * @param {Array<string>} scriptArgv 
      */
     constructor(script, env, interpreterArgv, scriptArgv)
     {
         super();
-        this.m_Script = parse(tokenize(script));
+        this.m_Script = [new Scope(parse(tokenize(script)))];
         this.m_Env = env;
         this.m_InterpreterArgv = {logChannel: null};
-        this.m_ScriptArgv = scriptArgv;
+        // this.m_ScriptArgv = scriptArgv;
         this.m_ProgrammCounter = 0;
         this.m_Active = false;
         this.m_Running = false;
         this.m_Terminated = false;
-        this.m_Labels = new Map();
-        this.m_Variables = new Map();//todo: variable scope
+
+        for(let i = 0; i < scriptArgv.length; i++)this.currentScope().declareVariable(new Variable(i.toString(), scriptArgv[i]));
+        this.currentScope().declareVariable(new Variable("argv", scriptArgv));
 
         this.m_LogOutput = (this.m_InterpreterArgv.logChannel === null ? null : new ChannelOutput(this.m_InterpreterArgv.logChannel));
 
         this.m_Env.interpreter = this;
     }
-    step(steps)
+    async step(steps)
     {
-        for(let i = 0; this.m_ProgrammCounter < this.m_Script.length && i < steps; i++)
+        for(let i = 0; i < steps; i++)
         {
-            this.execute(this.m_Script[this.m_ProgrammCounter]);
-            this.m_ProgrammCounter++;
+            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            {
+                while(this.currentScope().step() == null)
+                {
+                    this.m_Script.pop();
+                    if(this.m_Script.length == 0)
+                    {
+                        this.exit();
+                        return;
+                    }
+                }
+            }
         }
-        if(this.m_ProgrammCounter >= this.m_Script.length)this.emit("terminated", 0);
     }
     async run()
     {
         this.m_Active = true;
         this.m_Running = true;
-        while(this.m_Active && this.m_ProgrammCounter < this.m_Script.length)await this.execute(this.m_Script[this.m_ProgrammCounter++]);
+        while(this.m_Active)
+        {
+            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            {
+                while(this.currentScope().step() == null)
+                {
+                    this.m_Script.pop();
+                    if(this.m_Script.length == 0)
+                    {
+                        this.m_Running = false;
+                        this.exit();
+                        return;
+                    }
+                }  
+            }
+        }
         this.m_Running = false;
-        if(this.m_ProgrammCounter >= this.m_Script.length && this.m_Active)this.emit("terminated", 0);
     }
     exit(code = 0)
     {
@@ -61,24 +88,15 @@ class Interpreter extends EventEmitter
     {
         this.m_Active = false;
     }
-    jump(instructionNumber)
-    {
-        this.m_ProgrammCounter = instructionNumber;
-    }
 
     async awaitFullStop()
     {
         while(this.m_Running)await sleep(10);
     }
 
-    createLabel(name)
-    {
-        this.m_Labels.set(name, this.m_ProgrammCounter);
-    }
-
     /**
      * 
-     * @param {Array<Token>} instruction 
+     * @param {Array<InterpreterSymbol>} instruction 
      */
     async execute(instruction)
     {
@@ -88,18 +106,27 @@ class Interpreter extends EventEmitter
 
         for(let i = 0; i < instruction.length; i++)
         {
-            if(instruction[i].type === Types.EXPR)instruction[i] = new Token(Types.NUMBER, instruction[i].line, instruction[i].pos, calculateExpression(this.env, instruction[i]).value.toString());//todo: rewrite
+            if(instruction[i].type == SymbolTypes.EXPRESSION)instruction[i] = instruction[i].calculate(this.env);//todo: rewrite
+            else if(instruction[i].type == SymbolTypes.IF_EPRESSION)
+            {
+                const ifElseBlock = instruction[i].calculate(this.env);
+                if(ifElseBlock != null)
+                {
+                    this.pushScope(new Scope(ifElseBlock, this.currentScope().variables));
+                    return 1;
+                }
+            }
         }
 
-        if(this.m_Env.client.commands.has(Token.toString(instruction[0]).toLowerCase()))
+        if(this.m_Env.client.commands.has(instruction[0].value))
         {
-            const command = this.m_Env.client.commands.get(Token.toString(instruction[0]).toLowerCase());
-            if(command.allowedContexts.includes(this.m_Env.context) && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, command.permissionLevel))await command.execute(this.m_Env, prepareArgs(removeTokensByType(instruction, Types.EOL), this.m_Env));//temporary permission system for built-in commands
+            const command = this.m_Env.client.commands.get(instruction[0].value);
+            if(command.allowedContexts.includes(this.m_Env.context) && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, command.permissionLevel))await command.execute(this.m_Env, prepareArgs(instruction));//temporary permission system for built-in commands
             else this.m_Env.send("ENV Error!!!").then(() => console.log("ENV ERROR!!!"));//hardcoded
         }
         else
         {
-            let scriptName = Token.toString(instruction[0]).toLowerCase();
+            let scriptName = instruction[0].value;
             await this.m_Env.connection.query("SELECT Script, Permission_level FROM scripts WHERE Server_ID=? AND Script_name=?;", [this.m_Env.server.id, scriptName])
             .then(async row => {
                 if(row.length && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, row[0].Permission_level))
@@ -107,11 +134,23 @@ class Interpreter extends EventEmitter
                     let scriptEnv = this.m_Env.copy();
                     scriptEnv.context = "script";
                     scriptEnv.pushCommand(scriptName);
-                    this.m_Env.pipeOutput(await spawnProcess(scriptEnv, this.m_Env.processID, scriptName, row[0].Script));     
+                    this.m_Env.pipeOutput(await spawnProcess(scriptEnv, this.m_Env.processID, scriptName, row[0].Script, [], prepareArgs(instruction).slice(1)));     
                 }
             })
             .catch(console.error);
         }
+    }
+    pushScope(scope)
+    {
+        this.m_Script.push(scope);
+    }
+    popScope()
+    {
+        return this.m_Script.pop();
+    }
+    currentScope()
+    {
+        return this.m_Script[this.m_Script.length-1];
     }
 
     get env()
@@ -125,6 +164,49 @@ class Interpreter extends EventEmitter
     get running()
     {
         return this.m_Running;
+    }
+}
+
+class Scope
+{
+    constructor(instructions, prevScopVars = new Map())
+    {
+        this.m_Instructions = instructions;
+        this.m_Labels = new Map();
+        this.m_Variables = prevScopVars;
+        this.m_CurrentLine = 0;
+    }
+    jump(instructionNumber)
+    {
+        this.m_CurrentLine = instructionNumber;
+    }
+    step()
+    {
+        if(++this.m_CurrentLine < this.m_Instructions.length)return this.m_Instructions;
+        return null;
+    }
+
+    createLabel(name)
+    {
+        this.m_Labels.set(name, this.m_ProgrammCounter);
+    }
+
+    /**
+     * 
+     * @param {Variable} newVariable 
+     */
+    declareVariable(newVariable)
+    {
+        this.m_Variables.set(newVariable.name, newVariable);
+    }
+
+    get currentInstruction()
+    {
+        return this.m_Instructions[this.m_CurrentLine];
+    }
+    get currentLine()
+    {
+        return this.m_CurrentLine;
     }
     get labels()
     {
@@ -150,10 +232,10 @@ async function createUserTermEnv(client, connection, message)
  * 
  * @param {ExecEnv} env 
  */
-function createScriptEnv(client, connection, conf)
+function createScriptEnv(env)
 {
-    // env.context = "script";
-    // return env;
+    env.context = "script";
+    return env;
 }
 
 /**
@@ -170,26 +252,17 @@ function prepareScript(env, script)
 
 /**
  * 
- * @param {Array<Token>} tokens 
+ * @param {Array<InterpreterSymbol>} symboles 
  * @param {ExecEnv} env
  */
-function prepareArgs(tokens, env)
+function prepareArgs(symboles)
 {
     let args = [];
-    let arg = [];
-    for(let token of tokens)
+    for(let symbol of symboles)
     {
-        console.log(token);
-        if(token.type === Types.SPACE)
-        {
-            if(!arg.length)continue;
-            args.push(Token.toString(arg, false));
-            arg = [];
-        }
-        else if(token.type === Types.PIPE)args.push(env.pipe);
-        else arg.push(Token.toString(token, false));
+        console.log(symbol);
+        args.push(symbol.value);
     }
-    if(arg.length)args.push(Token.toString(arg, false));
     return args;
 }
 
@@ -212,7 +285,7 @@ class ProcessManager
      * @param {string} name 
      * @param {Array<string>} script 
      */
-    spawn(env, parent, name, script)
+    spawn(env, parent, name, script, interpreterArgs, scriptArgs)
     {
         let parentProcess = null;
         if(parent !== null)
@@ -224,7 +297,7 @@ class ProcessManager
                 return;
             }
         }
-        let newProcess = new Process(env, parent, name, script);
+        let newProcess = new Process(env, parent, name, script, interpreterArgs, scriptArgs);
         let pidPromise = new Promise(resolve => {
             newProcess.once("activated", pid => {
                 if(parent !== null)parentProcess.addChild(pid);
@@ -303,11 +376,11 @@ class Process extends EventEmitter
      * @param {Array<string>} script 
      * @param {string} name 
      */
-    constructor(env, parent, name, script)
+    constructor(env, parent, name, script, interpreterArgs, scriptArgs)
     {
         super();
         this.m_Name = name;
-        this.m_Interpreter = new Interpreter(script, env, []);
+        this.m_Interpreter = new Interpreter(script, env, interpreterArgs, scriptArgs);
         this.m_parent = parent;//parent pid
         this.m_childProcesses = [];//child pids
     }
@@ -350,10 +423,10 @@ class Process extends EventEmitter
  * @param {Array<string>} script 
  * @param {string} name 
  */
-function spawnProcess(env, parent, name, script)
+function spawnProcess(env, parent, name, script, interpreterArgs, scriptArgs)
 {
-    if(!env.client.processes.has(env.server.id))env.client.processes.set(env.server.id, new ProcessManager());
-    return env.client.processes.get(env.server.id).spawn(env, parent, name, script);
+    if(!env.client.processes.has(env.server.id))env.client.processes.set(env.server.id, new ProcessManager());//verify if the current server has a process manager and create one if not
+    return env.client.processes.get(env.server.id).spawn(env, parent, name, script, interpreterArgs, scriptArgs);
 }
 
 function killProcess(env, processID)

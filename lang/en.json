@@ -29,6 +29,8 @@
 
     "editors_errors_bad_input": "Bad Input!!",
 
+    "editors_closed_message": "**$bufferName** closed",
+
 
     "script_editor_title": "Editing $scriptName:",
 
