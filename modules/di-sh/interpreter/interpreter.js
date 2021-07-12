@@ -120,7 +120,14 @@ class Interpreter extends EventEmitter
 
         if(this.m_Env.client.commands.has(instruction[0].value))
         {
-            const command = this.m_Env.client.commands.get(instruction[0].value);
+            let command = this.m_Env.client.commands.get(instruction[0].value);
+            for(let arg of instruction)
+            {
+                let subCommand = null;
+                for(let subComm of command.subCommands)if(subComm.name == arg.value)subCommand = subComm;
+
+                
+            }
             if(command.allowedContexts.includes(this.m_Env.context) && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, command.permissionLevel))await command.execute(this.m_Env, prepareArgs(instruction));//temporary permission system for built-in commands
             else this.m_Env.send("ENV Error!!!").then(() => console.log("ENV ERROR!!!"));//hardcoded
         }
