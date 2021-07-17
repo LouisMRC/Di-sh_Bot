@@ -3,9 +3,9 @@ const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'emoji',
-    description: 'emoji commands',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env
@@ -14,6 +14,5 @@ module.exports = {
     async execute(env, args)
     {
         
-        return env;
     }
 }

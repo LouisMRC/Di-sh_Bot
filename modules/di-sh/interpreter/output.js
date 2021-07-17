@@ -89,6 +89,10 @@ class ChannelOutput extends BasicOutput
         for(let i = 0; i < this.m_OutputBuffer.length; i++)messages.push(await channel.send(this.m_OutputBuffer.pop()));
         return messages;
     }
+    get target()
+    {
+        return this.m_Target;
+    }
 }
 class ConsoleOutput extends BasicOutput
 {
@@ -104,6 +108,10 @@ class ConsoleOutput extends BasicOutput
     {
 
     }
+    get target()
+    {
+        return this.m_Target;
+    }
 }
 class FileOutput extends BasicOutput
 {
@@ -118,6 +126,10 @@ class FileOutput extends BasicOutput
     async display(env)
     {
 
+    }
+    get target()
+    {
+        return this.m_Target;
     }
 }
 

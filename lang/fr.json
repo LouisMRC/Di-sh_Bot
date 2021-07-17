@@ -7,6 +7,8 @@
 
     "undefined_member": "Non, **$member** n'existe pas(je ne peux pas compter ses rôles)",
 
+    "not_implemented": "En developpement",
+
 
     "settings_general": "Paramètres:\n-Préfix(prefix nouveauPréfix): **`$prefix`**\n-Langue(language nouvelleLangue): **`$language`**\n-noping auto(auto-noping): **`$AutoNOPING`**",
 

@@ -7,6 +7,8 @@
 
     "undefined_member": "nope, **$member** is not a valid user(i can't count his roles)",
 
+    "not_implemented": "Coming soon",
+
 
     "settings_general": "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**",
 
@@ -20,7 +22,6 @@
     "help_dialog": "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)",
     
     "help_message": "help message",
-
     
     
     "editors_components_clipboard": "Clipboard:",

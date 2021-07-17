@@ -3,7 +3,6 @@ const { MessageEmbed } = require("discord.js");
 const { displayScript, scriptEditor } = require("../modules/editors");
 const { bold } = require("../modules/textDecorations");
 const { FileOutput } = require("../modules/di-sh/interpreter/output");
-const request = require("request");
 
 module.exports = {
     name: 'script',
@@ -20,7 +19,7 @@ module.exports = {
                 if((await env.connection.query(`SELECT * FROM scripts WHERE Server_ID=? AND Script_name=?`, [env.server.id, args[2]])).length)
                 {
                     // hardcoded
-                    break;
+                    return;
                 }
                 await scriptEditor(env.client, env.connection, env, 120_000, {scriptName: args[2].toLowerCase(), script: []})
                     .then(async () => await env.send("finished"))
@@ -40,7 +39,7 @@ module.exports = {
         {
             name: 'edit',//todo: permissions
             illegalContextes: ["script"],
-            permissionLevel: 1,
+            permissionLevel: 1,//temp
             subCommands: [],
             async execute(env, args)
             {
