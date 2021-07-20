@@ -2,9 +2,9 @@ const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'react',
-    description: 'add a reaction as the robot',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env

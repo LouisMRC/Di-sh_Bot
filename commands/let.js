@@ -3,9 +3,9 @@ const { Variable } = require("../modules/di-sh/interpreter/variable/variables");
 
 module.exports = {
     name: 'let',
-    description: 'create a variable',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env

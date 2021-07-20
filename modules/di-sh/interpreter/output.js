@@ -94,6 +94,10 @@ class ChannelOutput extends BasicOutput
         for(let i = 0; i < this.m_OutputBuffer.length; i++)messages.push(await channel.send(this.m_OutputBuffer.pop()));
         return messages;
     }
+    get target()
+    {
+        return this.m_Target;
+    }
 }
 class ConsoleOutput extends BasicOutput
 {
@@ -108,6 +112,10 @@ class ConsoleOutput extends BasicOutput
     async display(env)
     {
 
+    }
+    get target()
+    {
+        return this.m_Target;
     }
 }
 class FileOutput extends BasicOutput
@@ -139,6 +147,10 @@ class FileOutput extends BasicOutput
         let channel = (this.m_Target === null ? env.channel : this.m_Target);
         for(let line of this.m_OutputBuffer)fs.writeFileSync(filePath, line+"\n", {flag: "as"});
         return [await channel.send(new MessageAttachment(filePath)).then(() => fs.rmSync(filePath))];
+    }
+    get target()
+    {
+        return this.m_Target;
     }
 }
 

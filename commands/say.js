@@ -3,9 +3,9 @@ const { isOption } = require("../modules/cliFuncs");
 
 module.exports = {
     name: 'say',
-    description: 'say something as the robot',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {ExecEnv} env

@@ -39,8 +39,7 @@ Client.db.getConnection()
             let servers = await connection.query("SELECT Server_ID FROM servers;");
             for(let server of servers)
             {
-                checkConnection(Client.db, connection);
-                let conf = await getGeneralConfig(connection, server.Server_ID);
+                let conf = await getGeneralConfig(Client.db, connection, server.Server_ID);
                 let guild = await Client.guilds.fetch(server.Server_ID);
                 let env = new ExecEnv(Client, connection, guild, conf, conf.getLanguage, guild.systemChannel, {name: "su", id: "0"}, "script", []);
                 onStart(env);
@@ -48,7 +47,6 @@ Client.db.getConnection()
         });
 
         Client.on("message", async (message) => {
-            connection = await checkConnection(Client.db, connection);
             let env = await createUserTermEnv(Client, connection, message);
             let script = prepareScript(env, message.content);
             if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script, [], []);
@@ -58,7 +56,6 @@ Client.db.getConnection()
         Client.on("messageUpdate", async (oldMessage, newMessage) => {
             if(newMessage.editedAt !== null && ((newMessage.editedAt.getTime() - oldMessage.createdAt.getTime()) / 1000) < 86400)
             {
-                connection = await checkConnection(Client.db, connection);
                 let env = await createUserTermEnv(Client, connection, newMessage);
                 let script = prepareScript(env, newMessage.content);
                 if(script.length)spawnProcess(env, null, script[0].toLowerCase(), script, [], []);

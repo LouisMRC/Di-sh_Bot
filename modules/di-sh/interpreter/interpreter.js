@@ -118,11 +118,27 @@ class Interpreter extends EventEmitter
             }
         }
 
-        if(this.m_Env.client.commands.has(instruction[0].value))
+        if(this.m_Env.client.commands.has(instruction[0].value))//permission and context check
         {
-            const command = this.m_Env.client.commands.get(instruction[0].value);
-            if(command.allowedContexts.includes(this.m_Env.context) && await checkPermissionLevel(this.m_Env, this.m_Env.user.id, command.permissionLevel))await command.execute(this.m_Env, prepareArgs(instruction));//temporary permission system for built-in commands
-            else this.m_Env.send("ENV Error!!!").then(() => console.log("ENV ERROR!!!"));//hardcoded
+            let command = this.m_Env.client.commands.get(instruction[0].value);
+            for(let arg of instruction.slice(1))
+            {
+                let subCommand = null;
+                for(let subComm of command.subCommands)if(subComm.name == arg.value)subCommand = subComm;
+                if(subCommand != null)
+                {
+                    if(subCommand.illegalContextes.includes(this.m_Env.context) || !(subCommand.permissionLevel == null || await checkPermissionLevel(this.m_Env, this.m_Env.user.id, subCommand.permissionLevel)))
+                    {
+                        await this.m_Env.send("ENV Error!!!");//create a REAL error handling system
+                        return;
+                    }
+                    command = subCommand;
+                }
+                else break;
+            }
+            if(command.execute == 0)this.m_Env.send(this.m_Env.serverLocale.not_implemented);
+            else if(command.execute != null)await command.execute(this.m_Env, prepareArgs(instruction));//temporary permission system for built-in commands
+            else this.m_Env.send("ENV Error!!!");//hardcoded
         }
         else
         {
@@ -139,6 +155,10 @@ class Interpreter extends EventEmitter
             })
             .catch(console.error);
         }
+    }
+    async executeStr(instruction)
+    {
+        this.execute(parse(tokenize([instruction]))[0]);
     }
     pushScope(scope)
     {
@@ -224,7 +244,7 @@ class Scope
  */
 async function createUserTermEnv(client, connection, message)
 {
-    let conf = await getGeneralConfig(connection, message.guild.id);
+    let conf = await getGeneralConfig(client.db, connection, message.guild.id);
     return new ExecEnv(client, connection, message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user", []);
 }
 

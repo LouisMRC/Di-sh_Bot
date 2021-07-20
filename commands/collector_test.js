@@ -3,9 +3,9 @@ const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'collector_test',
-    description: 'test the script editor',
-    allowedContexts: ["user"],
+    illegalContextes: ["scipt"],
     permissionLevel: 3,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env 

@@ -4,76 +4,136 @@ const { ChannelOutput } = require("../modules/di-sh/interpreter/output");
 
 module.exports = {
     name: 'env',
-    description: 'env variables',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
-    /**
-     * 
-     * @param {execEnv} env
-     * @param {Array<string>} args 
-     */
-    async execute(env, args)
-    {
-        switch(args[1].toLowerCase())
+    subCommands: [
         {
-            case "set":
-                switch(args[2].toLowerCase())
+            name: 'set',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [
                 {
-                    case "channel":
+                    name: 'channel',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         env.channel = env.server.channels.cache.get(args[3]);
-                        break;
+                    }
                 }
-                break;
-            case "show":
-                switch(args[2].toLowerCase())
+            ],
+            execute: null
+        },
+        {
+            name: 'show',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [
                 {
-                    case "channel":
+                    name: 'channel',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         env.send(`ENV/CHANNEL: ${toChannelMention(env.channel.id)}`);
-                        break;
-                    case "user":
+                    }
+                },
+                {
+                    name: 'user',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         env.send(`ENV/USER: ${toUserMention(env.user.id)}`);
-                        break;
-                    case "context":
+                    }
+                },
+                {
+                    name: 'context',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         env.send(`ENV/CONTEXT: ${env.context}`);
-                        break;
-                    case "pid":
+                    }
+                },
+                {
+                    name: 'pid',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         let pid = env.processID;
                         env.send(`ENV/PID: ${pid}`);
                         env.pipeOutput(pid);
-                        break;
+                    }
                 }
-                break;
-            case "output_handler":
-                switch(args[2].toLowerCase())
+            ],
+            execute: 1
+        },
+        {
+            name: 'outputs',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [
                 {
-                    case "add":
-                        switch(args[3].toLocaleLowerCase())
+                    name: 'add',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [
                         {
-                            case "channel":
-                                env.outputManager.add(new ChannelOutput(env.server.channels.cache.get(args[4]), args[5] === "true"))
-                                break;
-                            case "console":
-                                break;
-                            case "file":
-                                break;
-                            default:
-                                //error
-                                break;
+                            name: 'channel',
+                            illegalContextes: [],
+                            permissionLevel: null,
+                            subCommands: [],
+                            async execute(env, args)
+                            {
+                                env.outputManager.add(new ChannelOutput(env.server.channels.cache.get(args[4]), args[5] === "true"));
+                            }
+                        },
+                        {
+                            name: 'console',
+                            illegalContextes: [],
+                            permissionLevel: null,
+                            subCommands: [],
+                            execute: 1
+                        },
+                        {
+                            name: 'file',
+                            illegalContextes: [],
+                            permissionLevel: null,
+                            subCommands: [],
+                            execute: 1
                         }
-                        break;
-                    case "remove":
-                        break;
-                    case "list":
+                    ],
+                    execute: null
+                },
+                {
+                    name: 'remove',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    execute: 1
+                },
+                {
+                    name: 'list',
+                    illegalContextes: [],
+                    permissionLevel: null,
+                    subCommands: [],
+                    async execute(env, args)
+                    {
                         let line = "OutputTargets:";
-                        for(let i = 0; i < env.outputManager.outputTargets.length; i++)
-                        {
-                            line += `\nid: ${i}, type: ${env.outputManager.outputTargets[i].constructor.name}`;
-                        }
+                        env.outputManager.outputTargets.forEach((output, id) => line += `\nid: ${id}, type: ${output.constructor.name}, target: ${output.target == null ? env.channel : output.target}`);
                         env.send(line);
-                        break;
+                    }
                 }
-                break;
-            default: break;
+            ],
+            execute: null
         }
-    }
+    ],
+    execute: null
 }

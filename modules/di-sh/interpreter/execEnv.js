@@ -110,7 +110,10 @@ module.exports = class ExecEnv
     }
 
 
-
+    set connection(connection)
+    {
+        this.m_Connection = connection;
+    }
     set server(server)
     {
         this.m_Server = server;
