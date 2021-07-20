@@ -12,6 +12,8 @@ const { checkPermissionLevel } = require("../../permission");
 const { calculateExpression } = require("./variable/operations");
 const { Variable } = require("./variable/variables");
 const { SymbolTypes, InterpreterSymbol } = require("./parser/interperterSymboles");
+const { exit } = require("process");
+const { BasicError } = require("./error");
 
 class Interpreter extends EventEmitter
 {
@@ -32,6 +34,8 @@ class Interpreter extends EventEmitter
         this.m_Active = false;
         this.m_Running = false;
         this.m_Terminated = false;
+
+        this.m_Errors = [];
 
         for(let i = 0; i < scriptArgv.length; i++)this.currentScope().declareVariable(new Variable(i.toString(), scriptArgv[i]));
         this.currentScope().declareVariable(new Variable("argv", scriptArgv));
@@ -87,6 +91,12 @@ class Interpreter extends EventEmitter
     stop()
     {
         this.m_Active = false;
+    }
+    terminate(code = 0)
+    {
+        this.stop();
+        await this.awaitFullStop();
+        exit(code);
     }
 
     async awaitFullStop()
@@ -160,6 +170,18 @@ class Interpreter extends EventEmitter
     {
         this.execute(parse(tokenize([instruction]))[0]);
     }
+
+    /**
+     * 
+     * @param {BasicError} error 
+     */
+    throw(error)//todo: stdErr output
+    {
+        this.m_Errors.push(error);
+        this.m_Env.send(error.print());
+        if(error.fatal)this.terminate(1);//hardcoded
+    }
+
     pushScope(scope)
     {
         this.m_Script.push(scope);

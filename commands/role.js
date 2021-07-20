@@ -18,7 +18,7 @@ module.exports = {
             illegalContextes: [],
             permissionLevel: 1,
             subCommands: [],
-            async execute: 1
+            execute: 1
         },
         {
             name: 'replace',
@@ -71,7 +71,7 @@ module.exports = {
             illegalContextes: [],
             permissionLevel: null,
             subCommands: [],
-            async execute: 1
+            execute: 1
         }
     ],
     /**
