@@ -1,5 +1,10 @@
-const { Message } = require("discord.js");
+const { Message, MessageAttachment } = require("discord.js");
 const ExecEnv = require("./execEnv");
+const fs = require("fs");
+
+const BOT_FS = process.cwd() + "/botFs";
+const DOWNLOAD = BOT_FS + "/download";
+const UPLOAD = BOT_FS + "/upload";
 
 class OutputManager
 {
@@ -115,17 +120,33 @@ class ConsoleOutput extends BasicOutput
 }
 class FileOutput extends BasicOutput
 {
-    constructor(ouputTarget, direct = false)
+    constructor(ouputTarget, direct=false, fileName=null)
     {
         super(ouputTarget, direct);
+        this.m_FileName = fileName;
     }
-    send(outputContent, env)
+    /**
+     * 
+     * @param {*} outputContent 
+     * @param {ExecEnv} env 
+     */
+    async send(outputContent, env)
     {
-
+        this.m_OutputBuffer.push(outputContent);
+        if(this.m_IsDirectOutput)return await this.display(env);
+        return null;
     }
+    /**
+     * 
+     * @param {ExecEnv} env 
+     */
     async display(env)
     {
-
+        const filePath = `${UPLOAD}/${this.m_FileName === null ? env.server.name + "_output.txt" : `${env.server.name}_${this.m_FileName}`}`;//todo: file name
+        if(!fs.existsSync(UPLOAD))fs.mkdirSync(UPLOAD, {recursive: true});
+        let channel = (this.m_Target === null ? env.channel : this.m_Target);
+        for(let line of this.m_OutputBuffer)fs.writeFileSync(filePath, line+"\n", {flag: "as"});
+        return [await channel.send(new MessageAttachment(filePath)).then(() => fs.rmSync(filePath))];
     }
     get target()
     {
