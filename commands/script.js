@@ -126,6 +126,7 @@ module.exports = {
             async execute(env, args)
             {
                 await env.connection.query("UPDATE scripts SET Script_name=? WHERE Server_ID=? AND Script_name=?;", [args[3], env.server.id, args[2]]);
+
             }
         },
         {

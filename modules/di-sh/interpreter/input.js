@@ -1,5 +1,5 @@
 const ExecEnv = require("./execEnv");
-
+const fs = require("fs");
 
 /**
  * 
@@ -71,6 +71,11 @@ async function yesNo(env, text, timeout, defaultAnswer="no")
         case "no":
             return false;
     }
+}
+
+function file(path)
+{
+    console.log(fs.readFileSync(path));
 }
 
 module.exports = {
