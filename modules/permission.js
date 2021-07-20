@@ -1,4 +1,5 @@
 const ExecEnv = require("./di-sh/interpreter/execEnv");
+const { checkConnection } = require("./system/db");
 
 
 /**
@@ -31,6 +32,7 @@ async function checkPermissionLevel(env, userID, minPermLevel)
     if((await getUserPermissionLevel(env, userID)) <= minPermLevel)return true;
     const roles = (await env.server.members.fetch(userID)).roles.cache.array();
     const permissions = [];
+    env.connection = await checkConnection(env.client.db, env.connection);
     await env.connection.query("SELECT Role_ID FROM role_permissions WHERE Server_ID=? AND Permission_level <= ?;", [env.server.id, minPermLevel])
         .then(rows => {
             for(let row of rows)permissions.push(row.Role_ID);
@@ -46,6 +48,7 @@ async function checkPermissionLevel(env, userID, minPermLevel)
  */
 async function getUserPermissionLevel(env, userID)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     if(userID === env.server.ownerID || userID === "0")return 0;
     const row = await env.connection.query("SELECT Permission_level FROM user_permissions WHERE Server_ID=? AND User_ID=?;", [env.server.id, userID]);
     if(!row.length)return 5;//hardcoded
@@ -59,6 +62,7 @@ async function getUserPermissionLevel(env, userID)
  */
 async function getRolePermissionLevel(env, roleID)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     if((await (env.server.roles.fetch(roleID))).permissions.has("ADMINISTRATOR"))return 0;
     const row = await env.connection.query("SELECT Permission_level FROM role_permissions WHERE Server_ID=? AND Role_ID=?;", [env.server.id, roleID]);
     if(!row.length)return null;
@@ -73,6 +77,7 @@ async function getRolePermissionLevel(env, roleID)
  */
 async function updateUserPermissionLevel(env, userID, newPermLevel)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     if((await env.connection.query("SELECT Permission_level FROM user_permissions WHERE Server_ID=? AND User_ID=?;", [env.server.id, userID])).length)
     {
         await env.connection.query("UPDATE user_permissions SET Permission_level=? Where Server_ID=? AND User_ID=?;", [newPermLevel, env.server.id, userID]);
@@ -88,6 +93,7 @@ async function updateUserPermissionLevel(env, userID, newPermLevel)
  */
 async function updateRolePermissionLevel(env, roleID, newPermLevel)
 {
+    env.connection = await checkConnection(env.client.db, env.connection);
     if((await env.connection.query("SELECT Permission_level FROM role_permissions WHERE Server_ID=? AND Role_ID=?;", [env.server.id, roleID])).length)
     {
         await env.connection.query("UPDATE role_permissions SET Permission_level=? Where Server_ID=? AND Role_ID=?;", [newPermLevel, env.server.id, roleID]);

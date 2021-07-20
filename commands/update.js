@@ -2,9 +2,9 @@ const ExecEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'update',
-    description: 'update a message',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {ExecEnv} env

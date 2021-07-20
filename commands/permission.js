@@ -4,28 +4,34 @@ const { calculatePermissionLevel, updateUserPermissionLevel, updateRolePermissio
 
 module.exports = {
     name: 'permission',
-    description: 'manage permissions',
-    allowedContexts: ["user", "script"],
-    permissionLevel: 0,
-    /**
-     * 
-     * @param {execEnv} env
-     * @param {Array<string>} args 
-     */
-    async execute(env, args)
-    {
-        switch(args[1])
+    illegalContextes: [],
+    permissionLevel: 5,
+    subCommands: [
         {
-            case "calc":
+            name: 'calc',
+            illegalContextes: ["script"],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 let id = args.length === 3 && isUserMention(args[2]) ? getUserID(args[2]) : env.user.id;
                 let permission = await calculatePermissionLevel(env, id);
                 env.send(permission);
                 env.pipeOutput(permission);
-                break;
-            case "update":
+
+            }
+        },
+        {
+            name: 'update',
+            illegalContextes: ["script"],
+            permissionLevel: 1,
+            subCommands: [],
+            async execute(env, args)
+            {
                 if(isRoleMention(args[2]))updateRolePermissionLevel(env, getRoleID(args[2]), parseInt(args[3]));
                 else updateUserPermissionLevel(env, getUserID(args[2]), parseInt(args[3]));
-                break;
+            }
         }
-    }
+    ],
+    execute: null
 }

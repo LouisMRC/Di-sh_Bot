@@ -3,26 +3,44 @@ const { isUserMention, toUserMention, getUserID } = require("../modules/mention"
 const { bold } = require("../modules/textDecorations");
 module.exports = {
     name: 'role',
-    description: 'some usefull commands to manipulate roles',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
-    /**
-     * 
-     * @param {execEnv} env
-     * @param {Array} args 
-     */
-    async execute(env, args, ping = true)//todo: add ping to env vars
-    {
-        console.log(args);
-        switch(args[1].toLowerCase())
+    subCommands: [
         {
-            case "add":
-                break;
-            case "role":
-                break;
-            case "replace":
-                break;
-            case "count":
+            name: 'add',
+            illegalContextes: [],
+            permissionLevel: 1,
+            subCommands: [],
+            execute: 1
+        },
+        {
+            name: 'remove',
+            illegalContextes: [],
+            permissionLevel: 1,
+            subCommands: [],
+            async execute: 1
+        },
+        {
+            name: 'replace',
+            illegalContextes: [],
+            permissionLevel: 1,
+            subCommands: [],
+            execute: 1
+        },
+        {
+            name: 'delete',
+            illegalContextes: [],
+            permissionLevel: 1,
+            subCommands: [],
+            execute: 1
+        },
+        {
+            name: 'count',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 if(args.length < 3 || args[2].toLowerCase() === "all")
                 {
                     env.server.roles.fetch()
@@ -46,13 +64,24 @@ module.exports = {
                         })
                         .catch(console.error);
                 }
-                break;
-            case "show":
-                break;
+            }
+        },
+        {
+            name: 'show',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute: 1
         }
-        return env;
-    }
+    ],
+    /**
+     * 
+     * @param {execEnv} env
+     * @param {Array} args 
+     */
+    execute: null
 }
+
 function searchUnusedRoles()
 {
 

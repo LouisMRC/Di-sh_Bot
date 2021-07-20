@@ -3,7 +3,7 @@ const { multiline_codeblock } = require("./textDecorations");
 const { digitOnly, replace } = require("./string");
 const { textInput, promptYesNo } = require("./di-sh/interpreter/input");
 const { MessageEmbed } = require("discord.js");
-const { saveScript, updateConfig } = require("./system/db");
+const { saveScript, updateConfig, checkConnection } = require("./system/db");
 const { startWithPrefix } = require("./di-sh/interpreter/contentFilters");
 const { spawnProcess, createScriptEnv } = require("./di-sh/interpreter/interpreter");
 const { stringifyConf } = require("./system/config");
@@ -256,6 +256,7 @@ function scriptEditor(client, connection, env, idleTimeout, scriptData = {script
                                                 collector.stop(`save: ${err}`);
                                                 return;
                                             });
+                                            env.connection = checkConnection(env.client.db, env.connection);
                                     }
                                     while((await connection.query("SELECT Script_ID FROM scripts WHERE Server_ID=? AND Script_name=?;", [env.server.id, newName])).length && !(await promptYesNo(env, replace(env.serverLocale.script_editor_save_overwrite_question, ["$scriptName"], [newName]), 12_000)));
                                     script.name = newName;

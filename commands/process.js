@@ -5,19 +5,26 @@ const { killProcess } = require("../modules/di-sh/interpreter/interpreter");
 
 module.exports = {
     name: 'process',
-    description: 'manage processes on the server',
-    allowedContexts: ["user", "script"],
-    permissionLevel: 0,
-    /**
-     * 
-     * @param {execEnv} env
-     * @param {Array} args 
-     */
-    async execute(env, args)
-    {
-        switch(args[1])
+    illegalContextes: [],
+    permissionLevel: 5,
+    subCommands: [
         {
-            case "list":
+            name: 'kill',
+            illegalContextes: [],
+            permissionLevel: 2,
+            subCommands: [],
+            async execute(env, args)
+            {
+                killProcess(env, parseInt(args[2]));
+            }
+        },
+        {
+            name: 'list',
+            illegalContextes: [],
+            permissionLevel: 3,
+            subCommands: [],
+            async execute(env, args)
+            {
                 let processesManager = env.client.processes.get(env.server.id);
                 let listHeader = `${processesManager.processes.size} Processes`;//hardcoded
                 let processList = "";
@@ -36,36 +43,60 @@ module.exports = {
                 }
                 env.send(listHeader);
                 env.send(processList);
-                break;
-            case "spawn":
-                break;
-            case "kill":
-                killProcess(env, parseInt(args[2]));
-                break;
-            case "await":
+            }
+        },
+        {
+            name: 'await',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 env.pipeOutput(await awaitProcess(env, parseInt(args[2])));
-                break;
-            case "stop":
+            }
+        },
+        {
+            name: 'stop',
+            illegalContextes: [],
+            permissionLevel: null,//todo: check permission level of the user who spawned the process to stop and compare
+            subCommands: [],
+            async execute(env, args)
+            {
                 var PID = parseInt(args[2]);
                 var processManager = env.client.processes.get(env.server.id);
                 if(processManager.has(PID))processManager.stop(PID);
-                break;
-            case "continue":
+            }
+        },
+        {
+            name: 'resume',
+            illegalContextes: [],
+            permissionLevel: null,//todo: check permission level of the user who spawned the process to resume and compare
+            subCommands: [],
+            async execute(env, args)
+            {
                 env.client.processes.get(env.server.id).continue(parseInt(args[2]));
-                break;
-            case "step":
+            }
+        },
+        {
+            name: 'step',
+            illegalContextes: [],
+            permissionLevel: null,//todo: check permission level of the user who spawned the process to continue and compare
+            subCommands: [],
+            async execute(env, args)
+            {
                 let process = env.client.processes.get(env.server.id).processes.get(parseInt(args[2]));
                 await process.interpreter.step(parseInt(args[3]));
-                break;
+            }
         }
-    }
+    ],
+    execute: null
 }
 
 /**
  * 
  * @param {number} processID 
  */
-function awaitProcess(env, processID)
+function awaitProcess(env, processID)//todo: move to interpreter class
 {
     return new Promise((resolve, reject) => {
         let process = env.client.processes.get(env.server.id).processes.get(processID);

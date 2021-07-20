@@ -60,8 +60,9 @@ async function getConfig(env, name)
  * @param {string} serverID 
  * @returns 
  */
-async function getGeneralConfig(connection, serverID)
+async function getGeneralConfig(pool, connection, serverID)
 {
+    connection = await checkConnection(pool, connection);
     let config;
     let rows = await connection.query("SELECT Server_ID, Data FROM configs WHERE (Server_ID=? OR Server_ID=0) AND Config_name='general';", [serverID]);
     config = parseConf(JSON.parse(rows[0].Data));
@@ -108,14 +109,14 @@ async function updateConfig(env, name, config)
     await env.connection.query("DELETE FROM config WHERE Server_ID=? AND Config_name=?;", [env.server.id, name]);//delete the custom configuration
  }
 
- async function checkConnection(pool, connection)
- {
+async function checkConnection(pool, connection)
+{
     await connection.ping()
         .catch(async () => {
             connection = await pool.getConnection();
         });
     return connection;
- }
+}
 
 
 module.exports = {

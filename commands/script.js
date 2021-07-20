@@ -133,10 +133,7 @@ module.exports = {
             illegalContextes: ["script"],
             permissionLevel: 1,
             subCommands: [],
-            async execute(env, args)
-            {
-
-            }
+            execute: 1
         },
         {
             name: 'export',

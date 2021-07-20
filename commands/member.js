@@ -2,9 +2,9 @@ const execEnv = require("../modules/di-sh/interpreter/execEnv");
 
 module.exports = {
     name: 'member',
-    description: '',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env

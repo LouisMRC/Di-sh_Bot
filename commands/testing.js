@@ -4,43 +4,75 @@ const { displayScript, createDisplay } = require("../modules/editors");
 module.exports = {
     name: 'testing',
     description: 'some test commands(may be removed after release)',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
-    /**
-     * 
-     * @param {ExecEnv} env
-     * @param {Array<string>} args 
-     */
-    async execute(env, args)
-    {
-        switch(args[1].toLowerCase())
+    subCommands: [
         {
-            case "display_script":
-                var script = ['say "Alice: Hi!"', 'say "Bob: Hi!"'];
+            name: 'display_script',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
+                let script = ['say "Alice: Hi!"', 'say "Bob: Hi!"'];
                 env.channel.send(displayScript(script, parseInt(args[2]), parseInt(args[3]), parseInt(args[4])));
-                break;
-            case "editor_win":
-                var script = ['say "Alice: Hi!"', 'say "Bob: Hi!"'];
+            }
+        },
+        {
+            name: 'editor_win',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
+                let script = ['say "Alice: Hi!"', 'say "Bob: Hi!"'];
                 env.channel.send(createDisplay("foo", displayScript(script, parseInt(args[2]), parseInt(args[3]), parseInt(args[4])), env));
-                break;
-            case "msg_collect":
-                    msg_collect(env)
-                    .then(msg => env.channel.send(msg))
-                    .catch(() => env.channel.send("Error"));
-                    
-                break;
-            case "split":
+            }
+        },
+        {
+            name: 'msg_collect',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
+                msg_collect(env)
+                .then(msg => env.channel.send(msg))
+                .catch(() => env.channel.send("Error"));
+            }
+        },
+        {
+            name: 'split',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 env.send(splitCommand(args[2]));
-                break;
-            case "yes_no":
+            }
+        },
+        {
+            name: 'yes_no',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 env.send(`Answer: ${await promptYesNo(env, "Yes or No ?", 10000, "yes")}`);
-                break;
-            case "window":
+            }
+        },
+        {
+            name: 'window',
+            illegalContextes: [],
+            permissionLevel: null,
+            subCommands: [],
+            async execute(env, args)
+            {
                 env.send(windowedText("*", "_", "|", 2, 2, "left", args[2]));
-                break;
+            }
         }
-        return env;
-    }
+    ],
+    execute: null
 }
 
 // function msg_collect(env)

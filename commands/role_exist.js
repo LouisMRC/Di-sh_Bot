@@ -4,9 +4,9 @@ const { roleExist } = require("../modules/mention");
 
 module.exports = {
     name: 'role_exist',
-    description: 'check if a role exist',
-    allowedContexts: ["user", "script"],
+    illegalContextes: [],
     permissionLevel: 5,
+    subCommands: [],
     /**
      * 
      * @param {execEnv} env

@@ -244,7 +244,7 @@ class Scope
  */
 async function createUserTermEnv(client, connection, message)
 {
-    let conf = await getGeneralConfig(connection, message.guild.id);
+    let conf = await getGeneralConfig(client.db, connection, message.guild.id);
     return new ExecEnv(client, connection, message.guild, conf, languages.get(conf.getLanguage()), message.channel, message.author, "user", []);
 }
 
