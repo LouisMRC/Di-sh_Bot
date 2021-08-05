@@ -26,9 +26,9 @@ class Interpreter extends EventEmitter
     constructor(script, env, interpreterArgv, scriptArgv)
     {
         super();
-        this.m_Script = [new Scope(parse(tokenize(script)))];
         this.m_Env = env;
         this.m_InterpreterArgv = {logChannel: null};
+        this.m_Env.interpreter = this;
         // this.m_ScriptArgv = scriptArgv;
         this.m_ProgrammCounter = 0;
         this.m_Active = false;
@@ -37,12 +37,12 @@ class Interpreter extends EventEmitter
 
         this.m_Errors = [];
 
+        this.m_Script = [new Scope(parse(tokenize(script)))];
         for(let i = 0; i < scriptArgv.length; i++)this.currentScope().declareVariable(new Variable(i.toString(), scriptArgv[i]));
         this.currentScope().declareVariable(new Variable("argv", scriptArgv));
 
         this.m_LogOutput = (this.m_InterpreterArgv.logChannel === null ? null : new ChannelOutput(this.m_InterpreterArgv.logChannel));
 
-        this.m_Env.interpreter = this;
     }
     async step(steps)
     {
@@ -92,7 +92,7 @@ class Interpreter extends EventEmitter
     {
         this.m_Active = false;
     }
-    terminate(code = 0)
+    async terminate(code = 0)
     {
         this.stop();
         await this.awaitFullStop();
