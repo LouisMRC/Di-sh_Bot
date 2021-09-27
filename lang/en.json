@@ -1,4 +1,4 @@
-{
+[
     "landing_message": "Hello World!",
 
     "guild_rolecount": "There are $roleCount roles on this server",
@@ -78,7 +78,7 @@
 
     "default_overwrite_question": "Overwrite ?",
 
-    "default_overwrite_message": "Overwrite!!!",
+    ["default_overwrite_message": "Overwrite!!!"],
 
-    "default_bad_input_message": "Bad Input!!!"
-}
+    ["default_bad_input_message", "Bad Input!!!"]
+]
