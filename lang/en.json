@@ -1,84 +1,84 @@
 [
-    "landing_message": "Hello World!",
+    ["landing_message", "Hello World!"],
 
-    "guild_rolecount": "There are $roleCount roles on this server",
+    ["guild_rolecount", "There are $roleCount roles on this server"],
 
-    "member_rolecount": "$member has $roleCount roles",
+    ["member_rolecount", "$member has $roleCount roles"],
 
-    "undefined_member": "nope, **$member** is not a valid user(i can't count his roles)",
+    ["undefined_member", "nope, **$member** is not a valid user(i can't count his roles)"],
 
-    "not_implemented": "Coming soon",
-
-
-    "settings_general": "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**",
-
-    "settings_general_error_no_prefix": "You must specify the new prefix",
-
-    "settings_general_error_no_language": "You must specify the new language",
-
-    "settings_update": "The value of __$setting__ has been updated (new value: **`$value`**)",
+    ["not_implemented", "Coming soon"],
 
 
-    "help_dialog": "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)",
+    ["settings_general", "Settings:\n-Prefix(prefix newPrefix): **`$prefix`**\n-Language(language newLanguage): **`$language`**\n-Auto noping(auto-noping): **`$AutoNOPING`**"],
+
+    ["settings_general_error_no_prefix", "You must specify the new prefix"],
+
+    ["settings_general_error_no_language", "You must specify the new language"],
+
+    ["settings_update", "The value of __$setting__ has been updated (new value: **`$value`**)"],
+
+
+    ["help_dialog", "Need some help ?\nTry `$prefixhelp`\n(Oh! And here is my prefix: **`$prefix`**)"],
     
-    "help_message": "help message",
+    ["help_message", "help message"],
     
     
-    "editors_components_clipboard": "Clipboard:",
+    ["editors_components_clipboard", "Clipboard:"],
 
-    "editors_components_save_indicator": "Saved [$isSaved]",
+    ["editors_components_save_indicator", "Saved [$isSaved]"],
 
-    "editors_errors_bad_input": "Bad Input!!",
+    ["editors_errors_bad_input", "Bad Input!!"],
 
-    "editors_closed_message": "**$bufferName** closed",
+    ["editors_closed_message", "**$bufferName** closed"],
 
 
-    "script_editor_title": "Editing $scriptName:",
+    ["script_editor_title", "Editing $scriptName:"],
 
-    "script_editor_title_new": "New Script",
+    ["script_editor_title_new", "New Script"],
 
-    "script_editor_console_title": "Console:",
+    ["script_editor_console_title", "Console:"],
 
-    "script_editor_commands": "**-`$prefixexe`** - Execute the script\n**-`$prefixsave`** - Save the script\n**-`$prefixquit`** - Close the editor",
+    ["script_editor_commands", "**-`$prefixexe`** - Execute the script\n**-`$prefixsave`** - Save the script\n**-`$prefixquit`** - Close the editor"],
 
-    "script_editor_footer": "(prefixed commands will be ignored and executed as regular commands)",
+    ["script_editor_footer", "(prefixed commands will be ignored and executed as regular commands)"],
 
-    "script_editor_save_create_name": "Script name to write:",
+    ["script_editor_save_create_name", "Script name to write:"],
 
-    "script_editor_save_overwrite_question": "**$scriptName** already exists, overwrite ?",
+    ["script_editor_save_overwrite_question", "**$scriptName** already exists, overwrite ?"],
 
-    "script_editor_timeout": "Timeout!!!",
+    ["script_editor_timeout", "Timeout!!!"],
 
-    "script_editor_finish": "Saved As **$scriptName**\nTry it!!(**`$prefix$scriptName`**)",
+    ["script_editor_finish", "Saved As **$scriptName**\nTry it!!(**`$prefix$scriptName`**)"],
     
-    "script_editors_errors_copy_empty_line": "Error:\nCan't copy empty line(s)",
+    ["script_editors_errors_copy_empty_line", "Error:\nCan't copy empty line(s)"],
 
-    "script_list_item": "-$scriptName - $scriptSize lines",
+    ["script_list_item", "-$scriptName - $scriptSize lines"],
 
-    "script_show_title": "Scripts:",
-
-
-    "prompt_emoji_reaction_listener": "Add a reaction",
-
-    "timeout_reaction_listener": "Timeout!!!",
-
-    "type_script_start_reaction_listener": "Script For $emoji:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)",
-
-    "type_script_finish_reaction_listener": "Saved As $emoji",
-
-    "succes_reaction_listener": "$emoji Successfully binded",
-
-    "reaction_listener_enabled": "A new Reaction Listener just spawned!",
+    ["script_show_title", "Scripts:"],
 
 
-    "role_group_list_title": "Role Groups on this Server:",
+    ["prompt_emoji_reaction_listener", "Add a reaction"],
 
-    "role_group_list_missing_role_warning": "\n\n⚠: Missing Role(s)",
+    ["timeout_reaction_listener", "Timeout!!!"],
+
+    ["type_script_start_reaction_listener", "Script For $emoji:\n(prefixed commands will be ignored and executed as regular commands)\nRemember to save when you've finished(**`$prefixsave`**)\nOr you can just cancel(**`$prefixcancel`**)"],
+
+    ["type_script_finish_reaction_listener", "Saved As $emoji"],
+
+    ["succes_reaction_listener", "$emoji Successfully binded"],
+
+    ["reaction_listener_enabled", "A new Reaction Listener just spawned!"],
 
 
-    "default_overwrite_question": "Overwrite ?",
+    ["role_group_list_title", "Role Groups on this Server:"],
 
-    ["default_overwrite_message": "Overwrite!!!"],
+    ["role_group_list_missing_role_warning", "\n\n⚠: Missing Role(s)"],
+
+
+    ["default_overwrite_question", "Overwrite ?"],
+
+    ["default_overwrite_message", "Overwrite!!!"],
 
     ["default_bad_input_message", "Bad Input!!!"]
 ]
