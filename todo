@@ -1,0 +1,36 @@
+Interpreter:
+    Symboles:
+        If/Else
+        For
+        While
+        Case
+        Function and scopes
+    Variables
+
+Man pages
+
+Error handling system
+
+Built-in scripts:
+    Dynamic vocal pools
+    Cross-Server channels and script sharing system
+    Basic guild utility scripts:
+        Manage members
+        Manage roles
+        Manage Emojis
+    Advanced:
+        Role groupes
+
+        Reaction listeners
+        Message listeners
+
+
+
+System:
+    Services
+
+    Hooks(execOnStartup, execOnMemberJoin, etc...)
+    
+
+Currently working on:
+    Error handling
