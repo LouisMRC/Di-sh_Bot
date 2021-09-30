@@ -64,10 +64,22 @@ class EnvError extends BasicError
     }
 }
 
+
+/**
+ * 
+ * @param {BasicError} error 
+ */
+ function throwErr(error, interpreter)
+ {
+     if(interpreter != null)interpreter.throw(error);//hardcoded
+     else console.log(error.print());
+ }
+
 module.exports = {
     BasicError,
     LexicalError,
     SyntacticalError,
     RuntimeError,
-    EnvError   
+    EnvError,
+    throwErr  
 }

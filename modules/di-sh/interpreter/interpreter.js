@@ -37,7 +37,7 @@ class Interpreter extends EventEmitter
 
         this.m_Errors = [];
 
-        this.m_Script = [new Scope(parse(tokenize(script)))];
+        this.m_Script = [new Scope(parse(tokenize(script, this), this))];
         for(let i = 0; i < scriptArgv.length; i++)this.currentScope().declareVariable(new Variable(i.toString(), scriptArgv[i]));
         this.currentScope().declareVariable(new Variable("argv", scriptArgv));
 
@@ -48,16 +48,17 @@ class Interpreter extends EventEmitter
     {
         for(let i = 0; i < steps; i++)
         {
-            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            let scopeCount = this.m_Script.length;
+            await this.execute(this.currentScope().currentInstruction);
+            if(scopeCount < this.m_Script.length)continue;
+
+            while(this.currentScope().step() == null)
             {
-                while(this.currentScope().step() == null)
+                this.m_Script.pop();
+                if(this.m_Script.length == 0)
                 {
-                    this.m_Script.pop();
-                    if(this.m_Script.length == 0)
-                    {
-                        this.exit();
-                        return;
-                    }
+                    this.exit();
+                    return;
                 }
             }
         }
@@ -68,18 +69,19 @@ class Interpreter extends EventEmitter
         this.m_Running = true;
         while(this.m_Active)
         {
-            if((await this.execute(this.currentScope().currentInstruction)) !== 1)
+            let scopeCount = this.m_Script.length;
+            await this.execute(this.currentScope().currentInstruction);
+            if(scopeCount < this.m_Script.length)continue;
+
+            while(this.currentScope().step() == null)
             {
-                while(this.currentScope().step() == null)
+                this.m_Script.pop();
+                if(this.m_Script.length == 0)
                 {
-                    this.m_Script.pop();
-                    if(this.m_Script.length == 0)
-                    {
-                        this.m_Running = false;
-                        this.exit();
-                        return;
-                    }
-                }  
+                    this.m_Running = false;
+                    this.exit();
+                    return;
+                }
             }
         }
         this.m_Running = false;
@@ -120,11 +122,12 @@ class Interpreter extends EventEmitter
             else if(instruction[i].type == SymbolTypes.IF_EPRESSION)
             {
                 const ifElseBlock = instruction[i].calculate(this.env);
-                if(ifElseBlock != null)
-                {
-                    this.pushScope(new Scope(ifElseBlock, this.currentScope().variables));
-                    return 1;
-                }
+                if(ifElseBlock != null)this.pushScope(new Scope(ifElseBlock, this.currentScope().variables));
+            }
+            else if(instruction[i].type == SymbolTypes.While_Expression)
+            {
+                const whileBlock = instruction[i].calculate(this.env);
+                if(whileBlock != null)this.pushScope(new Scope(whileBlock, this.currentScope().variables));
             }
         }
 

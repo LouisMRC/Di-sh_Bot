@@ -1,13 +1,11 @@
-const { SyntacticalError } = require("../error");
-const ExecEnv = require("../execEnv");
+const { throwErr, LexicalError } = require("../error");
 const { Types, Token } = require("./token");
 
 /**
  * 
  * @param {Array<string>} script 
- * @param {ExecEnv} env
  */
-function tokenize(script, env = null)//null: testing/debug
+function tokenize(script, interpreter = null)//null: testing/debug
 {
     let tokenizedScript = [];
     for(let i = 0; i < script.length; i++)//tokenize line by line
@@ -189,8 +187,7 @@ function tokenize(script, env = null)//null: testing/debug
                     else
                     {
                         tokenizedLine.push(new Token(Types.UNEXPECTED, i, j, c));
-                        if(env != null)env.interpreter.throw(new SyntacticalError("Unexpected Token", `unexpected token: ${c} at ${i}:${j}`));//hardcoded
-                        else console.log(`unexpected token: ${c} at ${i+1}:${j+1}`);
+                        throwErr(interpreter, new LexicalError("Unexpected Token", `unexpected token: ${c} at ${i}:${j}`));//hardcoded
                     }
                     break;
             }
