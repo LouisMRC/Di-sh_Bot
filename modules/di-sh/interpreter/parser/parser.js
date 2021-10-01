@@ -1,7 +1,7 @@
 const { isMention } = require("../../../mention");
 const { calculateExpression } = require("../variable/operations");
 const { Token, Types, isValueToken, isOperatorToken, isBinaryOperator, isUnaryOperator, isCastOperator } = require("./token");
-const { SymbolTypes, InterpreterSymbol, Expression, If_Expression } = require("./interperterSymboles");
+const { SymbolTypes, InterpreterSymbol, Expression, If_Expression, While_Expression } = require("./interperterSymboles");
 const keywords = require("../keywords/keywords.json");
 const { createPool } = require("mariadb");
 
@@ -21,7 +21,7 @@ const OperatorPrecedence = {
  * 
  * @param {Array<Array<Token>>} tokens 
  */
-function parse(tokens)
+function parse(tokens, interpreter = null)
 {
     let script = [];
     for(let i = 0; i < tokens.length; i++)
@@ -131,9 +131,47 @@ function parse(tokens)
                         }
                         //todo: else block handling
                         newLine.push(new If_Expression(shuntingYard(conditionExpr), parse(ifBlock)));
-                        continue;
                     }
-                    newLine.push(new InterpreterSymbol(SymbolTypes.IDENTIFIER, token.value));
+                    else if(token.value == keywords.While)
+                    {
+                        let conditionExpr = [];
+                        let whileBlock = [];
+                        let l = i;
+                        k = j+1;
+                        if(line[k++].type == Types.LEFT_PARENTHESIS)while(line[k].type != Types.RIGHT_PARENTHESIS)conditionExpr.push(line[k++]);
+                        if(line[k+1].type != Types.EOL)
+                        {
+                            if(line[k+1].type == Types.LEFT_CURLY)
+                            {
+                                while(++l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)whileBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else 
+                            {
+                                whileBlock.push(line.slice(k+1));
+                                j = line.length;
+                            }
+                        }
+                        else
+                        {
+                            if(tokens[l+1][0].type == Types.LEFT_CURLY)
+                            {
+                                l+=2;
+                                while(l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)whileBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else
+                            {
+                                whileBlock.push(tokens[++l]);
+                                j = line.length;
+                                i = l;
+                            }
+                        }
+                        newLine.push(new While_Expression(shuntingYard(conditionExpr), parse(whileBlock)));
+                    }
+                    else newLine.push(new InterpreterSymbol(SymbolTypes.IDENTIFIER, token.value));
                 }
                 else if(token.type == Types.NUMBER)
                 {
