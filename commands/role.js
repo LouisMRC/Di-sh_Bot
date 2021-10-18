@@ -1,3 +1,4 @@
+const { RuntimeError } = require("../modules/di-sh/interpreter/error");
 const execEnv = require("../modules/di-sh/interpreter/execEnv");
 const { isUserMention, toUserMention, getUserID } = require("../modules/mention");
 const { bold } = require("../modules/textDecorations");
@@ -11,7 +12,16 @@ module.exports = {
             illegalContextes: [],
             permissionLevel: 1,
             subCommands: [],
-            execute: 1
+            /**
+             * 
+             * @param {execEnv} env 
+             * @param {Array<String>} args 
+             */
+            async execute(env, args)
+            {
+                if(args.length < 3)env.interpreter.throw(new RuntimeError("Missing arguments", "This command take at least 1 argument", true));//hardcoded
+                env.pipeOutput((await env.server.roles.create({name: args[2]})).id);
+            }
         },
         {
             name: 'remove',
