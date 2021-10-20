@@ -1,4 +1,6 @@
 Interpreter:
+    interpreter rewrite
+
     Symboles:
         If/Else
         For
@@ -6,6 +8,7 @@ Interpreter:
         Case
         Function and scopes
     Variables
+    stdErr output
 
 Man pages
 

@@ -1,5 +1,7 @@
 {
     "If": "if",
     "Else": "else",
-    "While": "while"
+    "While": "while",
+
+    "FunctionDef": "fn"
 }

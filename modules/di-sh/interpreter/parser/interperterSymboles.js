@@ -5,8 +5,8 @@ const SymbolTypes = {
     STRING: "STRING",
     NUMBER: "NUMBER",
     EXPRESSION: "EXPRESSION",
-    IF_EPRESSION: "IF_EXPRESSION",
-    While_Expression: "WHILE_EXPRESSION",
+    IF_EXPRESSION: "IF_EXPRESSION",
+    WHILE_EXPRESSION: "WHILE_EXPRESSION",
 
     UNEXPECTED: "UNEXPECTED"
 }
@@ -50,7 +50,7 @@ class If_Expression extends InterpreterSymbol
 {
     constructor(conditionExpr, ifBlock, elseBlock = null)
     {
-        super(SymbolTypes.IF_EPRESSION);
+        super(SymbolTypes.IF_EXPRESSION);
         this.m_Condition = conditionExpr;
         this.m_IfBlock = ifBlock;
         this.m_ElseBlock = elseBlock;
@@ -67,7 +67,7 @@ class While_Expression extends InterpreterSymbol
 {
     constructor(conditionExpr, whileBlock)
     {
-        super(SymbolTypes.While_Expression);
+        super(SymbolTypes.WHILE_EXPRESSION);
         this.m_Condition = conditionExpr;
         this.m_WhileBlock = whileBlock;
     }

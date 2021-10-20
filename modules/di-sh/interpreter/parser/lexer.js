@@ -187,7 +187,7 @@ function tokenize(script, interpreter = null)//null: testing/debug
                     else
                     {
                         tokenizedLine.push(new Token(Types.UNEXPECTED, i, j, c));
-                        throwErr(interpreter, new LexicalError("Unexpected Token", `unexpected token: ${c} at ${i}:${j}`));//hardcoded
+                        throwErr(new LexicalError("Unexpected Token", `unexpected token: ${c} at ${i}:${j}`), interpreter);//hardcoded
                     }
                     break;
             }

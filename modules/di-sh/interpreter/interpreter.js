@@ -94,14 +94,14 @@ class Interpreter extends EventEmitter
     {
         this.m_Active = false;
     }
-    async terminate(code = 0)
+    async terminate(code = 0)//terminate script execution and exit
     {
         this.stop();
         await this.awaitFullStop();
         exit(code);
     }
 
-    async awaitFullStop()
+    async awaitFullStop()//block the execution until the interpreter completely stop
     {
         while(this.m_Running)await sleep(10);
     }
@@ -110,7 +110,7 @@ class Interpreter extends EventEmitter
      * 
      * @param {Array<InterpreterSymbol>} instruction 
      */
-    async execute(instruction)
+    async execute(instruction)//execute a single instruction
     {
         // const ping = !(args[args.length -1] === "noping" || env.serverConfig.isAutoNOPING());
         const ping = true;
@@ -119,15 +119,15 @@ class Interpreter extends EventEmitter
         for(let i = 0; i < instruction.length; i++)
         {
             if(instruction[i].type == SymbolTypes.EXPRESSION)instruction[i] = instruction[i].calculate(this.env);//todo: rewrite
-            else if(instruction[i].type == SymbolTypes.IF_EPRESSION)
+            else if(instruction[i].type == SymbolTypes.IF_EXPRESSION)
             {
                 const ifElseBlock = instruction[i].calculate(this.env);
                 if(ifElseBlock != null)this.pushScope(new Scope(ifElseBlock, this.currentScope().variables));
             }
-            else if(instruction[i].type == SymbolTypes.While_Expression)
+            else if(instruction[i].type == SymbolTypes.WHILE_EXPRESSION)
             {
                 const whileBlock = instruction[i].calculate(this.env);
-                if(whileBlock != null)this.pushScope(new Scope(whileBlock, this.currentScope().variables));
+                if(whileBlock != null)this.pushScope(new WhileLoopScope(whileBlock, instruction[i], this.currentScope().variables));
             }
         }
 
@@ -261,6 +261,64 @@ class Scope
     {
         return this.m_Variables;
     }
+}
+class WhileLoopScope extends Scope
+{
+    /**
+     * 
+     * @param {Array<InterpreterSymbol>} instructions 
+     * @param {InterpreterSymbol} endCondition 
+     * @param {Map<string, Variable>} prevScopVars 
+     */
+    constructor(instructions, endCondition, prevScopVars = new Map())
+    {
+        super(instructions, prevScopVars);
+        this.m_EndCondition = endCondition;
+    }
+    step()
+    {
+        if(++this.m_CurrentLine < this.m_Instructions.length)return this.m_Instructions;
+        else if(this.m_EndCondition.calculate() != null)
+        {
+            this.m_CurrentLine = 0;
+            return this.m_Instructions
+        }
+        else return null;
+    }
+}
+class ForLoopScope extends Scope//todo: rewrite
+{
+    /**
+     * 
+     * @param {Array<InterpreterSymbol>} instructions
+     * @param {InterpreterSymbol} init 
+     * @param {InterpreterSymbol} condition
+     * @param {InterpreterSymbol} increment 
+     * @param {Map<string, Variable>} prevScopVars 
+     */
+        constructor(instructions, init, condition, increment, prevScopVars = new Map())
+        {
+            super(instructions, prevScopVars);
+            this.m_Init = init;
+            this.m_Condition = condition;
+            this.m_Increment = increment;
+            this.m_Init.calculate();
+            if(this.m_Condition.calculate() == null)this.m_Instructions = [];
+        }
+        step()
+        {
+            if(++this.m_CurrentLine < this.m_Instructions.length)return this.m_Instructions;
+            else 
+            {
+                this.m_Increment.calculate();
+                if(this.m_Condition.calculate() != null)
+                {
+                    this.m_CurrentLine = 0;
+                    return this.m_Instructions;
+                }
+                else return null;
+            }
+        }
 }
 
 /**

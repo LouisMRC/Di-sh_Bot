@@ -4,6 +4,7 @@ const { Token, Types, isValueToken, isOperatorToken, isBinaryOperator, isUnaryOp
 const { SymbolTypes, InterpreterSymbol, Expression, If_Expression, While_Expression } = require("./interperterSymboles");
 const keywords = require("../keywords/keywords.json");
 const { createPool } = require("mariadb");
+const { throwErr, SyntacticalError } = require("../error");
 
 
 const OperatorPrecedence = {
@@ -138,6 +139,48 @@ function parse(tokens, interpreter = null)
                         let whileBlock = [];
                         let l = i;
                         k = j+1;
+                        if(line[k++].type == Types.LEFT_PARENTHESIS)while(line[k].type != Types.RIGHT_PARENTHESIS)conditionExpr.push(line[k++]);
+                        if(line[k+1].type != Types.EOL)
+                        {
+                            if(line[k+1].type == Types.LEFT_CURLY)
+                            {
+                                while(++l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)whileBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else 
+                            {
+                                whileBlock.push(line.slice(k+1));
+                                j = line.length;
+                            }
+                        }
+                        else
+                        {
+                            if(tokens[l+1][0].type == Types.LEFT_CURLY)
+                            {
+                                l+=2;
+                                while(l < tokens.length && tokens[l][0].type != Types.RIGHT_CURLY)whileBlock.push(tokens[l++]);
+                                i = l;
+                                j = 0;
+                            }
+                            else
+                            {
+                                whileBlock.push(tokens[++l]);
+                                j = line.length;
+                                i = l;
+                            }
+                        }
+                        newLine.push(new While_Expression(shuntingYard(conditionExpr), parse(whileBlock)));
+                    }
+                    else if(token.value == keywords.FunctionDef)
+                    {
+                        let functionName = "";
+                        let functionParams = [];
+                        let funcBlock = [];
+                        let l = i;
+                        k = j+1;
+                        if(line[k+1].type != Types.IDENTIFIER)throwErr(new SyntacticalError("Bad function declaration", 'The "fn" keyword should be followed by a valid function identifier'), interpreter);//hardcoded
+                        if(token[l+1][0].type != Types.LEFT_CURLY)throwErr(new SyntacticalError("Bad function declaration", "The function declaration should be followed by the function's body"), interpreter);//hardcoded
                         if(line[k++].type == Types.LEFT_PARENTHESIS)while(line[k].type != Types.RIGHT_PARENTHESIS)conditionExpr.push(line[k++]);
                         if(line[k+1].type != Types.EOL)
                         {
